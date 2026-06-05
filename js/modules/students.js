@@ -1,4 +1,6 @@
 async function addStudent() {
+    console.log("addStudent déclenchée");
+
     const name = document.getElementById("student-name").value;
     const level = document.getElementById("student-level").value;
     const track = document.getElementById("student-track").value;
@@ -15,17 +17,23 @@ async function addStudent() {
     }
 
     const user = await getCurrentUser();
-    if (!user) return;
+    console.log("Utilisateur courant :", user);
+    if (!user) {
+        showAlert("Vous devez être connecté", "error");
+        return;
+    }
 
-    // Récupérer le centre_id de l'utilisateur
+    // Récupérer le profil avec centre_id
     const { data: profile, error: profileError } = await supabaseClient
         .from('profiles')
         .select('centre_id')
         .eq('id', user.id)
         .single();
 
-    if (profileError || !profile.centre_id) {
-        showAlert("Centre non trouvé", "error");
+    console.log("Profil récupéré :", profile, "Erreur :", profileError);
+
+    if (profileError || !profile || !profile.centre_id) {
+        showAlert("Centre non trouvé. Reconnectez-vous ou contactez le support.", "error");
         return;
     }
 
@@ -40,6 +48,8 @@ async function addStudent() {
             status: status,
             created_by: user.id
         }]);
+
+    console.log("Résultat insertion :", data, error);
 
     if (error) {
         showAlert("Erreur lors de l'ajout : " + error.message, "error");
@@ -56,6 +66,9 @@ async function addStudent() {
     await loadDashboardStats();
     await loadStudentsList();
 }
+
+// Les autres fonctions (loadStudentsList, deleteStudent, escapeHtml) restent identiques
+// Je les recopie ci-dessous pour que le fichier soit complet.
 
 async function loadStudentsList() {
     const container = document.getElementById("students-container");
@@ -108,7 +121,6 @@ async function loadStudentsList() {
         container.appendChild(card);
     });
 
-    // Ajouter les événements de suppression
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', () => deleteStudent(btn.dataset.id));
     });
@@ -140,4 +152,4 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-}
+            }
