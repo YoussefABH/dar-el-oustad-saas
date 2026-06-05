@@ -32,12 +32,9 @@ async function logout() {
 async function afterLogin() {
     const user = await getCurrentUser();
     if (!user) return;
-    // Charger les infos communes
     await loadCenterInfo();
     await loadDashboardStats();
     await loadStudentsList();
-    
-    // Vérifier le rôle
     const isDir = await isDirector();
     const directorSection = document.getElementById("director-section");
     if (directorSection) {
