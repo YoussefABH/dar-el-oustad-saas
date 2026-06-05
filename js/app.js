@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-btn').addEventListener('click', logout);
     document.getElementById('add-student-btn').addEventListener('click', addStudent);
 
+    // Initialiser le modal d'édition
+    initEditModal();
+
     // Vérifier si l'utilisateur est déjà connecté
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (session) {
@@ -14,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Écouter les changements d'état de connexion (pour onglets multiples)
+    // Écouter les changements d'état de connexion
     supabaseClient.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
             afterLogin();
