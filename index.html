@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Dar El-Oustad SaaS</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -20,32 +20,59 @@
 
         <!-- DASHBOARD VIEW -->
         <div id="dashboard-view" style="display:none;">
-            <h2>Dashboard</h2>
-            <div id="center-name"></div>
-            <button id="logout-btn">Déconnexion</button>
-            <hr>
+            <div class="dashboard-header">
+                <h2>Dashboard</h2>
+                <div id="center-name" class="center-name"></div>
+                <button id="logout-btn" class="logout-btn">Déconnexion</button>
+            </div>
 
-            <h3>Ajouter un étudiant</h3>
-            <input type="text" id="student-name" placeholder="Nom complet">
-            <input type="text" id="student-level" placeholder="Niveau">
-            <input type="text" id="student-track" placeholder="Filière">
-            <input type="number" id="student-payment" placeholder="Paiement (DH)">
-            <select id="student-status">
+            <div class="add-student-section">
+                <h3>Ajouter un étudiant</h3>
+                <div class="form-row">
+                    <input type="text" id="student-name" placeholder="Nom complet">
+                    <input type="text" id="student-level" placeholder="Niveau">
+                    <input type="text" id="student-track" placeholder="Filière">
+                    <input type="number" id="student-payment" placeholder="Paiement (DH)">
+                    <select id="student-status">
+                        <option value="Paid">Payé</option>
+                        <option value="Pending">En attente</option>
+                    </select>
+                    <button id="add-student-btn">Ajouter étudiant</button>
+                </div>
+            </div>
+
+            <div class="stats-section">
+                <h3>Statistiques</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">Total : <span id="totalStudents">0</span></div>
+                    <div class="stat-card">Payés : <span id="paidStudents">0</span></div>
+                    <div class="stat-card">En attente : <span id="pendingStudents">0</span></div>
+                    <div class="stat-card">Revenus : <span id="revenue">0</span> DH</div>
+                </div>
+            </div>
+
+            <div class="students-list-section">
+                <h3>Liste des étudiants</h3>
+                <div id="students-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'édition (caché par défaut) -->
+    <div id="edit-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Modifier l'étudiant</h3>
+            <input type="hidden" id="edit-student-id">
+            <input type="text" id="edit-name" placeholder="Nom">
+            <input type="text" id="edit-level" placeholder="Niveau">
+            <input type="text" id="edit-track" placeholder="Filière">
+            <input type="number" id="edit-payment" placeholder="Paiement">
+            <select id="edit-status">
                 <option value="Paid">Payé</option>
                 <option value="Pending">En attente</option>
             </select>
-            <button id="add-student-btn">Ajouter étudiant</button>
-            <hr>
-
-            <h3>Statistiques</h3>
-            <p>Total étudiants : <span id="totalStudents">0</span></p>
-            <p>Payés : <span id="paidStudents">0</span></p>
-            <p>En attente : <span id="pendingStudents">0</span></p>
-            <p>Revenus : <span id="revenue">0</span> DH</p>
-            <hr>
-
-            <h3>Liste des étudiants</h3>
-            <div id="students-container"></div>
+            <button id="save-edit-btn">Enregistrer</button>
         </div>
     </div>
 
@@ -58,4 +85,4 @@
     <script src="js/modules/dashboard.js"></script>
     <script src="js/app.js"></script>
 </body>
-</html>
+    </html>
