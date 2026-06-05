@@ -1,1 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>Dar El-Oustad Pro</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<div id="app">
+
+    <div id="login-view">
+        <h1>Dar El-Oustad Pro</h1>
+
+        <input type="email" id="email" placeholder="Email">
+
+        <input type="password" id="password" placeholder="Mot de passe">
+
+        <button onclick="login()">Connexion</button>
+
+        <button onclick="register()">Créer un compte</button>
+    </div>
+
+    <div id="dashboard-view" style="display:none;">
+        <h2>Dashboard</h2>
+
+        <button onclick="logout()">Déconnexion</button>
+
+        <div id="students-container"></div>
+    </div>
+
+</div>
+
+<script src="supabase.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
