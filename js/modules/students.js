@@ -1,6 +1,7 @@
-async function addStudent() {
-    console.log("addStudent déclenchée");
+// Variable globale pour stocker l'ID en cours d'édition (optionnel)
+let currentEditId = null;
 
+async function addStudent() {
     const name = document.getElementById("student-name").value;
     const level = document.getElementById("student-level").value;
     const track = document.getElementById("student-track").value;
@@ -17,27 +18,23 @@ async function addStudent() {
     }
 
     const user = await getCurrentUser();
-    console.log("Utilisateur courant :", user);
     if (!user) {
         showAlert("Vous devez être connecté", "error");
         return;
     }
 
-    // Récupérer le profil avec centre_id
     const { data: profile, error: profileError } = await supabaseClient
         .from('profiles')
         .select('centre_id')
         .eq('id', user.id)
         .single();
 
-    console.log("Profil récupéré :", profile, "Erreur :", profileError);
-
     if (profileError || !profile || !profile.centre_id) {
-        showAlert("Centre non trouvé. Reconnectez-vous ou contactez le support.", "error");
+        showAlert("Centre non trouvé. Reconnectez-vous.", "error");
         return;
     }
 
-    const { data, error } = await supabaseClient
+    const { error } = await supabaseClient
         .from('students')
         .insert([{
             centre_id: profile.centre_id,
@@ -48,8 +45,6 @@ async function addStudent() {
             status: status,
             created_by: user.id
         }]);
-
-    console.log("Résultat insertion :", data, error);
 
     if (error) {
         showAlert("Erreur lors de l'ajout : " + error.message, "error");
@@ -66,9 +61,6 @@ async function addStudent() {
     await loadDashboardStats();
     await loadStudentsList();
 }
-
-// Les autres fonctions (loadStudentsList, deleteStudent, escapeHtml) restent identiques
-// Je les recopie ci-dessous pour que le fichier soit complet.
 
 async function loadStudentsList() {
     const container = document.getElementById("students-container");
@@ -115,14 +107,29 @@ async function loadStudentsList() {
                 Paiement: ${student.payment_amount || 0} DH | Statut: ${student.status}
             </div>
             <div class="student-actions">
+                <button class="edit-btn" data-id="${student.id}" data-name="${escapeHtml(student.name)}" data-level="${escapeHtml(student.level || '')}" data-track="${escapeHtml(student.track || '')}" data-payment="${student.payment_amount || 0}" data-status="${student.status}">Modifier</button>
                 <button class="delete-btn" data-id="${student.id}">Supprimer</button>
             </div>
         `;
         container.appendChild(card);
     });
 
+    // Événements suppression
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', () => deleteStudent(btn.dataset.id));
+    });
+
+    // Événements modification (ouvrir modal)
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            const name = btn.dataset.name;
+            const level = btn.dataset.level;
+            const track = btn.dataset.track;
+            const payment = btn.dataset.payment;
+            const status = btn.dataset.status;
+            openEditModal(id, name, level, track, payment, status);
+        });
     });
 }
 
@@ -144,6 +151,62 @@ async function deleteStudent(studentId) {
     await loadStudentsList();
 }
 
+// Gestion du modal d'édition
+function openEditModal(id, name, level, track, payment, status) {
+    currentEditId = id;
+    document.getElementById("edit-student-id").value = id;
+    document.getElementById("edit-name").value = name;
+    document.getElementById("edit-level").value = level;
+    document.getElementById("edit-track").value = track;
+    document.getElementById("edit-payment").value = payment;
+    document.getElementById("edit-status").value = status;
+    document.getElementById("edit-modal").style.display = "flex";
+}
+
+function closeEditModal() {
+    document.getElementById("edit-modal").style.display = "none";
+    currentEditId = null;
+}
+
+async function updateStudent() {
+    const id = document.getElementById("edit-student-id").value;
+    const name = document.getElementById("edit-name").value;
+    const level = document.getElementById("edit-level").value;
+    const track = document.getElementById("edit-track").value;
+    const payment = parseFloat(document.getElementById("edit-payment").value);
+    const status = document.getElementById("edit-status").value;
+
+    if (!validateStudentName(name)) {
+        showAlert("Le nom doit contenir au moins 2 caractères", "error");
+        return;
+    }
+    if (isNaN(payment) || payment < 0) {
+        showAlert("Montant invalide", "error");
+        return;
+    }
+
+    const { error } = await supabaseClient
+        .from('students')
+        .update({
+            name: name,
+            level: level,
+            track: track,
+            payment_amount: payment,
+            status: status
+        })
+        .eq('id', id);
+
+    if (error) {
+        showAlert("Erreur mise à jour : " + error.message, "error");
+        return;
+    }
+
+    showAlert("Étudiant modifié", "success");
+    closeEditModal();
+    await loadDashboardStats();
+    await loadStudentsList();
+}
+
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, function(m) {
@@ -152,4 +215,17 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-            }
+}
+
+// Initialisation des événements du modal (à appeler dans app.js)
+function initEditModal() {
+    const modal = document.getElementById("edit-modal");
+    const closeBtn = document.querySelector(".close-modal");
+    const saveBtn = document.getElementById("save-edit-btn");
+
+    if (closeBtn) closeBtn.onclick = closeEditModal;
+    if (saveBtn) saveBtn.onclick = updateStudent;
+    window.onclick = function(event) {
+        if (event.target === modal) closeEditModal();
+    };
+        }
