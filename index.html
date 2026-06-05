@@ -15,7 +15,10 @@
 
 <div id="app">
 
+    <!-- LOGIN -->
+
     <div id="login-view">
+
         <h1>Dar El-Oustad Pro</h1>
 
         <input type="email" id="email" placeholder="Email">
@@ -25,14 +28,56 @@
         <button onclick="login()">Connexion</button>
 
         <button onclick="register()">Créer un compte</button>
+
     </div>
 
+    <!-- DASHBOARD -->
+
     <div id="dashboard-view" style="display:none;">
+
         <h2>Dashboard</h2>
 
         <button onclick="logout()">Déconnexion</button>
 
+        <hr>
+
+        <h3>Ajouter un étudiant</h3>
+
+        <input
+            type="text"
+            id="student-name"
+            placeholder="Nom complet">
+
+        <input
+            type="text"
+            id="student-level"
+            placeholder="Niveau">
+
+        <input
+            type="text"
+            id="student-track"
+            placeholder="Filière">
+
+        <input
+            type="number"
+            id="student-payment"
+            placeholder="Paiement">
+
+        <select id="student-status">
+            <option value="Paid">Payé</option>
+            <option value="Pending">En attente</option>
+        </select>
+
+        <button onclick="addStudent()">
+            Ajouter étudiant
+        </button>
+
+        <hr>
+
+        <h3>Liste des étudiants</h3>
+
         <div id="students-container"></div>
+
     </div>
 
 </div>
