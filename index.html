@@ -1,89 +1,61 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Dar El-Oustad Pro</title>
-
-<link rel="stylesheet" href="style.css">
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dar El-Oustad SaaS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
+    <div id="app">
+        <!-- LOGIN VIEW -->
+        <div id="login-view">
+            <h1>Dar El-Oustad Pro</h1>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Mot de passe">
+            <button id="login-btn">Connexion</button>
+            <button id="register-btn">Créer un compte</button>
+        </div>
 
-<div id="app">
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" style="display:none;">
+            <h2>Dashboard</h2>
+            <div id="center-name"></div>
+            <button id="logout-btn">Déconnexion</button>
+            <hr>
 
-    <!-- LOGIN -->
+            <h3>Ajouter un étudiant</h3>
+            <input type="text" id="student-name" placeholder="Nom complet">
+            <input type="text" id="student-level" placeholder="Niveau">
+            <input type="text" id="student-track" placeholder="Filière">
+            <input type="number" id="student-payment" placeholder="Paiement (DH)">
+            <select id="student-status">
+                <option value="Paid">Payé</option>
+                <option value="Pending">En attente</option>
+            </select>
+            <button id="add-student-btn">Ajouter étudiant</button>
+            <hr>
 
-    <div id="login-view">
+            <h3>Statistiques</h3>
+            <p>Total étudiants : <span id="totalStudents">0</span></p>
+            <p>Payés : <span id="paidStudents">0</span></p>
+            <p>En attente : <span id="pendingStudents">0</span></p>
+            <p>Revenus : <span id="revenue">0</span> DH</p>
+            <hr>
 
-        <h1>Dar El-Oustad Pro</h1>
-
-        <input type="email" id="email" placeholder="Email">
-
-        <input type="password" id="password" placeholder="Mot de passe">
-
-        <button onclick="login()">Connexion</button>
-
-        <button onclick="register()">Créer un compte</button>
-
+            <h3>Liste des étudiants</h3>
+            <div id="students-container"></div>
+        </div>
     </div>
 
-    <!-- DASHBOARD -->
-
-    <div id="dashboard-view" style="display:none;">
-
-        <h2>Dashboard</h2>
-
-        <button onclick="logout()">Déconnexion</button>
-
-        <hr>
-
-        <h3>Ajouter un étudiant</h3>
-
-        <input
-            type="text"
-            id="student-name"
-            placeholder="Nom complet">
-
-        <input
-            type="text"
-            id="student-level"
-            placeholder="Niveau">
-
-        <input
-            type="text"
-            id="student-track"
-            placeholder="Filière">
-
-        <input
-            type="number"
-            id="student-payment"
-            placeholder="Paiement">
-
-        <select id="student-status">
-            <option value="Paid">Payé</option>
-            <option value="Pending">En attente</option>
-        </select>
-
-        <button onclick="addStudent()">
-            Ajouter étudiant
-        </button>
-
-        <hr>
-
-        <h3>Liste des étudiants</h3>
-
-        <div id="students-container"></div>
-
-    </div>
-
-</div>
-
-<script src="supabase.js"></script>
-<script src="app.js"></script>
-
+    <script src="js/config/supabase.js"></script>
+    <script src="js/utils/dom.js"></script>
+    <script src="js/utils/validators.js"></script>
+    <script src="js/modules/auth.js"></script>
+    <script src="js/modules/center.js"></script>
+    <script src="js/modules/students.js"></script>
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
