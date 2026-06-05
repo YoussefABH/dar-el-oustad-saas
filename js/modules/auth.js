@@ -7,41 +7,19 @@ async function getCurrentUser() {
 async function register() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-
-    if (!validateEmail(email)) {
-        showAlert("Email invalide", "error");
-        return;
-    }
-    if (password.length < 6) {
-        showAlert("Le mot de passe doit contenir au moins 6 caractères", "error");
-        return;
-    }
-
-    const { data, error } = await supabaseClient.auth.signUp({ email, password });
-
-    if (error) {
-        showAlert(error.message, "error");
-        return;
-    }
-
-    showAlert("Compte créé avec succès ! Vérifiez votre email (si confirmation demandée) ou connectez-vous.", "success");
+    if (!validateEmail(email)) { showAlert("Email invalide", "error"); return; }
+    if (password.length < 6) { showAlert("Mot de passe trop court", "error"); return; }
+    const { error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) { showAlert(error.message, "error"); return; }
+    showAlert("Compte créé ! Vérifiez votre email (ou connectez-vous)", "success");
 }
 
 async function login() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-    if (error) {
-        showAlert(error.message, "error");
-        return;
-    }
-
-    const user = data.user;
-    if (user) {
-        await afterLogin();
-    }
+    if (error) { showAlert(error.message, "error"); return; }
+    await afterLogin();
 }
 
 async function logout() {
@@ -54,11 +32,16 @@ async function logout() {
 async function afterLogin() {
     const user = await getCurrentUser();
     if (!user) return;
-
-    // Charger le centre et le dashboard
+    // Charger les infos communes
     await loadCenterInfo();
     await loadDashboardStats();
     await loadStudentsList();
-
+    
+    // Vérifier le rôle
+    const isDir = await isDirector();
+    const directorSection = document.getElementById("director-section");
+    if (directorSection) {
+        directorSection.style.display = isDir ? "block" : "none";
+    }
     toggleView('dashboard');
 }
