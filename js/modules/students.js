@@ -1,13 +1,66 @@
 let currentEditId = null;
 
 async function addStudent() {
-    // ... (identique à avant, mais on vérifie que l'utilisateur est directeur)
     const isDir = await isDirector();
     if (!isDir) {
         showAlert("Seul le directeur peut ajouter des étudiants", "error");
         return;
     }
-    // ... reste du code identique
+    const name = document.getElementById("student-name").value;
+    const level = document.getElementById("student-level").value;
+    const track = document.getElementById("student-track").value;
+    const payment = parseFloat(document.getElementById("student-payment").value);
+    const status = document.getElementById("student-status").value;
+
+    if (!validateStudentName(name)) {
+        showAlert("Le nom doit contenir au moins 2 caractères", "error");
+        return;
+    }
+    if (isNaN(payment) || payment < 0) {
+        showAlert("Montant de paiement invalide", "error");
+        return;
+    }
+
+    const user = await getCurrentUser();
+    if (!user) return;
+
+    const { data: profile, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('centre_id')
+        .eq('id', user.id)
+        .single();
+
+    if (profileError || !profile || !profile.centre_id) {
+        showAlert("Centre non trouvé", "error");
+        return;
+    }
+
+    const { error } = await supabaseClient
+        .from('students')
+        .insert([{
+            centre_id: profile.centre_id,
+            name: name,
+            level: level,
+            track: track,
+            payment_amount: payment,
+            status: status,
+            created_by: user.id
+        }]);
+
+    if (error) {
+        showAlert("Erreur ajout: " + error.message, "error");
+        return;
+    }
+
+    showAlert("Étudiant ajouté", "success");
+    document.getElementById("student-name").value = '';
+    document.getElementById("student-level").value = '';
+    document.getElementById("student-track").value = '';
+    document.getElementById("student-payment").value = '';
+    document.getElementById("student-status").value = 'Pending';
+
+    await loadDashboardStats();
+    await loadStudentsList();
 }
 
 async function loadStudentsList() {
@@ -82,9 +135,6 @@ async function loadStudentsList() {
     }
 }
 
-// deleteStudent, updateStudent, openEditModal, closeEditModal, initEditModal identiques à avant (déjà présents)
-// Je les recopie ci-dessous pour que le fichier soit complet.
-
 async function deleteStudent(studentId) {
     if (!confirm("Supprimer cet étudiant ?")) return;
     const { error } = await supabaseClient.from('students').delete().eq('id', studentId);
@@ -117,10 +167,34 @@ async function updateStudent() {
     const track = document.getElementById("edit-track").value;
     const payment = parseFloat(document.getElementById("edit-payment").value);
     const status = document.getElementById("edit-status").value;
-    if (!validateStudentName(name)) { showAlert("Nom invalide", "error"); return; }
-    if (isNaN(payment) || payment < 0) { showAlert("Montant invalide", "error"); return; }
-    const { error } = await supabaseClient.from('students').update({ name, level, track, payment_amount: payment, status }).eq('id', id);
-    if (error) { showAlert("Erreur mise à jour", "error"); return; }
+
+    console.log("Update student:", { id, name, level, track, payment, status });
+
+    if (!validateStudentName(name)) {
+        showAlert("Le nom doit contenir au moins 2 caractères", "error");
+        return;
+    }
+    if (isNaN(payment) || payment < 0) {
+        showAlert("Montant invalide", "error");
+        return;
+    }
+
+    const { data, error } = await supabaseClient
+        .from('students')
+        .update({
+            name: name,
+            level: level,
+            track: track,
+            payment_amount: payment,
+            status: status
+        })
+        .eq('id', id);
+
+    if (error) {
+        showAlert("Erreur mise à jour: " + error.message, "error");
+        return;
+    }
+
     showAlert("Étudiant modifié", "success");
     closeEditModal();
     await loadDashboardStats();
@@ -136,4 +210,12 @@ function initEditModal() {
     window.onclick = function(event) { if (event.target === modal) closeEditModal(); };
 }
 
-function escapeHtml(str) { /* identique */ }
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+                                         }
