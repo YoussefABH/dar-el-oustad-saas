@@ -1,5 +1,3 @@
-// students.js - Gestion des étudiants (avec liaison parents)
-
 let currentEditId = null;
 
 async function addStudent() {
@@ -66,6 +64,7 @@ async function addStudent() {
 }
 
 async function loadStudentsList() {
+    alert("loadStudentsList - début");
     const container = document.getElementById("students-container");
     if (!container) return;
     container.innerHTML = '<div class="loader">Chargement...</div>';
@@ -78,7 +77,7 @@ async function loadStudentsList() {
         .select('centre_id, role')
         .eq('id', user.id)
         .single();
-
+    alert("centre_id récupéré: " + profile?.centre_id + ", role: " + profile?.role);
     if (profileError || !profile || !profile.centre_id) {
         container.innerHTML = "<p>Erreur centre non trouvé</p>";
         return;
@@ -89,7 +88,7 @@ async function loadStudentsList() {
         .select('*')
         .eq('centre_id', profile.centre_id)
         .order('created_at', { ascending: false });
-
+    alert("Étudiants chargés: " + students?.length);
     if (error) {
         container.innerHTML = "<p>Erreur chargement</p>";
         return;
@@ -97,6 +96,7 @@ async function loadStudentsList() {
 
     if (students.length === 0) {
         container.innerHTML = "<p>Aucun étudiant</p>";
+        alert("Aucun étudiant trouvé");
         return;
     }
 
@@ -141,6 +141,7 @@ async function loadStudentsList() {
             });
         });
     }
+    alert("Affichage liste terminé");
 }
 
 async function deleteStudent(studentId) {
@@ -242,7 +243,7 @@ async function showLinkParentsModal(studentId, studentName) {
             }
             showAlert("Liaisons mises à jour", "success");
             modalDiv.style.display = "none";
-            await loadStudentsList(); // rafraîchir l'affichage
+            await loadStudentsList();
         };
     }
 }
@@ -255,4 +256,4 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-        }
+}
