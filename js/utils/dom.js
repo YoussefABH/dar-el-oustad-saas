@@ -1,12 +1,10 @@
 function showAlert(message, type = 'error') {
     const existingAlert = document.querySelector('.alert');
     if (existingAlert) existingAlert.remove();
-
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type}`;
     alertDiv.textContent = message;
-    const app = document.getElementById('app');
-    app.insertBefore(alertDiv, app.firstChild);
+    document.body.appendChild(alertDiv);
     setTimeout(() => alertDiv.remove(), 4000);
 }
 
@@ -30,4 +28,14 @@ function showLoading(containerId, show = true) {
     } else {
         container.innerHTML = '';
     }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
