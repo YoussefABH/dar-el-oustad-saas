@@ -153,6 +153,56 @@ async function updateStudent() {
     if (error) alert("Erreur mise à jour");
     else { alert("Modifié"); closeEditModal(); await loadDashboardStats(); await loadStudentsList(); }
 }
+// À ajouter dans students.js
+
+async function loadParentLinksForStudent(studentId) {
+    const { data: linked, error } = await supabaseClient
+        .from('student_parents')
+        .select('parent_id');
+    if (error) return [];
+    return linked.map(l => l.parent_id);
+}
+
+// Fonction pour afficher un modal de liaison (à appeler depuis un bouton "Lier parents" dans la liste)
+async function showLinkParentsModal(studentId, studentName) {
+    const parents = await loadParentsForStudent(studentId);
+    const modalContent = `
+        <h3>Lier des parents à ${escapeHtml(studentName)}</h3>
+        <div id="parents-checkbox-list">
+            ${parents.map(p => `
+                <label style="display:block;">
+                    <input type="checkbox" value="${p.id}" ${p.isLinked ? 'checked' : ''}>
+                    ${escapeHtml(p.full_name)}
+                </label>
+            `).join('')}
+        </div>
+        <button id="save-parent-links-btn">Enregistrer</button>
+    `;
+    // Créer un modal dynamique (vous pouvez réutiliser le modal existant ou en créer un)
+    // Pour simplifier, on utilise un simple prompt ? Non, mieux vaut un modal dédié.
+    // Je vous propose d'ajouter un div "link-parents-modal" dans index.html.
+    const modalDiv = document.getElementById("link-parents-modal");
+    if (!modalDiv) return;
+    modalDiv.innerHTML = modalContent;
+    modalDiv.style.display = "flex";
+    const saveBtn = document.getElementById("save-parent-links-btn");
+    if (saveBtn) {
+        saveBtn.onclick = async () => {
+            const checkboxes = modalDiv.querySelectorAll('input[type="checkbox"]');
+            for (let cb of checkboxes) {
+                const parentId = cb.value;
+                const isChecked = cb.checked;
+                const currentlyLinked = parents.find(p => p.id === parentId)?.isLinked || false;
+                if (isChecked !== currentlyLinked) {
+                    await linkParentToStudent(parentId, studentId, isChecked);
+                }
+            }
+            showAlert("Liaisons mises à jour", "success");
+            modalDiv.style.display = "none";
+            await loadStudentsList(); // rafraîchir l'affichage si besoin
+        };
+    }
+}
 
 function initEditModal() {
     const modal = document.getElementById("edit-modal");
