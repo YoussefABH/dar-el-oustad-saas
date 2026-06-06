@@ -55,12 +55,9 @@ async function loadTeachersList() {
         container.appendChild(card);
     });
 
-    // Événements suppression
     document.querySelectorAll('.delete-teacher-btn').forEach(btn => {
         btn.addEventListener('click', () => deleteTeacher(btn.dataset.id));
     });
-
-    // Événements modification (ouvrir modal)
     document.querySelectorAll('.edit-teacher-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             openEditTeacherModal(btn.dataset.id, btn.dataset.name, btn.dataset.subject, btn.dataset.email, btn.dataset.phone);
@@ -89,7 +86,6 @@ async function addTeacher(fullName, subject, email, phone) {
             phone: phone,
             created_by: user.id
         });
-
     if (error) throw error;
 }
 
@@ -112,7 +108,7 @@ async function deleteTeacher(id) {
     if (error) throw error;
 }
 
-// Gestion du modal d'édition enseignant
+// Modal d'édition
 let currentEditTeacherId = null;
 
 function openEditTeacherModal(id, name, subject, email, phone) {
@@ -161,7 +157,6 @@ function initTeacherModal() {
     window.onclick = (e) => { if (e.target === modal) closeEditTeacherModal(); };
 }
 
-// Initialisation du formulaire d'ajout
 function initTeacherForm() {
     const addBtn = document.getElementById("add-teacher-btn");
     if (!addBtn) return;
@@ -188,4 +183,4 @@ function initTeacherForm() {
             showAlert("Erreur : " + error.message, "error");
         }
     });
-}
+                                 }
