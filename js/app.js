@@ -1,3 +1,4 @@
+alert("app.js chargé");
 document.addEventListener('DOMContentLoaded', () => {
     // Écouteurs
     document.getElementById('login-btn').addEventListener('click', login);
