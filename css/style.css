@@ -79,7 +79,7 @@ body {
 }
 
 /* FORMULAIRES */
-.add-student-section, .stats-section, .students-list-section {
+.add-student-section, .teachers-section, .parents-section, .stats-section, .students-list-section {
     background: white;
     border-radius: 16px;
     padding: 20px;
@@ -134,8 +134,8 @@ h3 {
     margin-top: 8px;
 }
 
-/* LISTE ÉTUDIANTS */
-.student-card {
+/* LISTES ÉTUDIANTS, ENSEIGNANTS, PARENTS */
+.student-card, .teacher-card, .parent-card {
     background: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 12px;
@@ -147,36 +147,43 @@ h3 {
     align-items: center;
     transition: box-shadow 0.2s;
 }
-.student-card:hover {
+.student-card:hover, .teacher-card:hover, .parent-card:hover {
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
-.student-info {
+.student-info, .teacher-info, .parent-info {
     flex: 3;
     min-width: 200px;
 }
-.student-actions {
+.student-actions, .teacher-actions, .parent-actions {
     display: flex;
     gap: 8px;
 }
-.student-actions button {
+.student-actions button, .teacher-actions button, .parent-actions button {
     padding: 6px 12px;
     border: none;
     border-radius: 6px;
     cursor: pointer;
 }
-.edit-btn {
+.edit-btn, .edit-teacher-btn, .edit-parent-btn {
     background-color: #ffc107;
     color: #333;
 }
-.edit-btn:hover {
+.edit-btn:hover, .edit-teacher-btn:hover, .edit-parent-btn:hover {
     background-color: #e0a800;
 }
-.delete-btn {
+.delete-btn, .delete-teacher-btn, .delete-parent-btn {
     background-color: #e63946;
     color: white;
 }
-.delete-btn:hover {
+.delete-btn:hover, .delete-teacher-btn:hover, .delete-parent-btn:hover {
     background-color: #b71c2c;
+}
+.link-parents-btn {
+    background-color: #17a2b8;
+    color: white;
+}
+.link-parents-btn:hover {
+    background-color: #138496;
 }
 
 /* MODAL */
@@ -264,11 +271,11 @@ h3 {
     .form-row input, .form-row select, .form-row button {
         width: 100%;
     }
-    .student-card {
+    .student-card, .teacher-card, .parent-card {
         flex-direction: column;
         align-items: flex-start;
     }
-    .student-actions {
+    .student-actions, .teacher-actions, .parent-actions {
         margin-top: 10px;
         width: 100%;
         justify-content: flex-end;
