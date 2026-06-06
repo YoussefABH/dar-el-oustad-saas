@@ -29,4 +29,4 @@ export class Sidebar {
         });
         return ul;
     }
-}
+    }
