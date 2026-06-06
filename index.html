@@ -6,10 +6,11 @@
     <title>Dar El-Oustad SaaS</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/logger.js"></script>
+    <script src="js/config/supabase.js"></script>
 </head>
 <body>
     <div id="app">
-        <!-- LOGIN VIEW -->
         <div id="login-view">
             <h1>Dar El-Oustad Pro</h1>
             <input type="email" id="email" placeholder="Email">
@@ -17,16 +18,12 @@
             <button id="login-btn">Connexion</button>
             <button id="register-btn">Créer un compte</button>
         </div>
-
-        <!-- DASHBOARD VIEW -->
         <div id="dashboard-view" style="display:none;">
             <div class="dashboard-header">
                 <h2>Dashboard</h2>
                 <div id="center-name" class="center-name"></div>
                 <button id="logout-btn" class="logout-btn">Déconnexion</button>
             </div>
-
-            <!-- Section visible uniquement pour le directeur -->
             <div id="director-section" style="display:none;">
                 <!-- Ajout étudiant -->
                 <div class="add-student-section">
@@ -43,8 +40,7 @@
                         <button id="add-student-btn">Ajouter étudiant</button>
                     </div>
                 </div>
-
-                <!-- Gestion des enseignants -->
+                <!-- Gestion enseignants -->
                 <div class="teachers-section">
                     <h3>Gestion des enseignants</h3>
                     <div class="form-row">
@@ -56,8 +52,7 @@
                     </div>
                     <div id="teachers-list-container"></div>
                 </div>
-
-                <!-- Gestion des parents -->
+                <!-- Gestion parents -->
                 <div class="parents-section">
                     <h3>Gestion des parents</h3>
                     <div class="form-row">
@@ -69,8 +64,6 @@
                     <div id="parents-list-container"></div>
                 </div>
             </div>
-
-            <!-- Statistiques communes -->
             <div class="stats-section">
                 <h3>Statistiques</h3>
                 <div class="stats-grid">
@@ -80,17 +73,13 @@
                     <div class="stat-card">Revenus : <span id="revenue">0</span> DH</div>
                 </div>
             </div>
-
-            <!-- Liste des étudiants -->
             <div class="students-list-section">
                 <h3>Liste des étudiants</h3>
                 <div id="students-container"></div>
             </div>
         </div>
     </div>
-
-    <!-- Modals d'édition -->
-    <!-- Modal étudiant -->
+    <!-- Modals -->
     <div id="edit-modal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -107,8 +96,6 @@
             <button id="save-edit-btn">Enregistrer</button>
         </div>
     </div>
-
-    <!-- Modal enseignant -->
     <div id="edit-teacher-modal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -121,8 +108,6 @@
             <button id="save-edit-teacher-btn">Enregistrer</button>
         </div>
     </div>
-
-    <!-- Modal parent -->
     <div id="edit-parent-modal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -134,11 +119,8 @@
             <button id="save-edit-parent-btn">Enregistrer</button>
         </div>
     </div>
-
-    <!-- Modal pour lier parents -->
     <div id="link-parents-modal" class="modal" style="display:none;"></div>
 
-    <script src="js/config/supabase.js"></script>
     <script src="js/utils/dom.js"></script>
     <script src="js/utils/validators.js"></script>
     <script src="js/modules/auth.js"></script>
@@ -149,4 +131,4 @@
     <script src="js/modules/parents.js"></script>
     <script src="js/app.js"></script>
 </body>
-                </html>
+                                                       </html>
