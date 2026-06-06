@@ -19,7 +19,7 @@ async function register() {
         if (error) throw error;
         showAlert("Compte créé ! Connectez-vous.", "success");
     } catch (e) {
-        logError("register", e.message);
+        logError("register error", e.message);
         showAlert("Erreur inscription: " + e.message, "error");
     }
 }
@@ -32,7 +32,7 @@ async function login() {
         if (error) throw error;
         await afterLogin();
     } catch (e) {
-        logError("login", e.message);
+        logError("login error", e.message);
         showAlert("Erreur connexion: " + e.message, "error");
     }
 }
