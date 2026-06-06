@@ -1,6 +1,5 @@
-// Logger visuel - affiche les erreurs dans un panneau dans la page
+// logger.js - Panneau d'erreur visuel
 (function() {
-    // Créer le conteneur d'erreurs s'il n'existe pas
     if (!document.getElementById('error-panel')) {
         const panel = document.createElement('div');
         panel.id = 'error-panel';
@@ -28,11 +27,14 @@
     window.logError = function(msg, details) {
         const panel = document.getElementById('error-panel');
         const errorMsg = document.createElement('div');
-        errorMsg.textContent = new Date().toLocaleTimeString() + ' - ' + msg + (details ? ' : ' + JSON.stringify(details) : '');
+        let text = new Date().toLocaleTimeString() + ' - ' + msg;
+        if (details) text += ' : ' + (typeof details === 'string' ? details : JSON.stringify(details));
+        errorMsg.textContent = text;
         panel.appendChild(errorMsg);
         panel.style.display = 'block';
-        // Auto-cacher après 10 secondes ?
-        setTimeout(() => {
+        // Auto-cacher si pas de nouveau message après 10 secondes
+        if (window.errorTimeout) clearTimeout(window.errorTimeout);
+        window.errorTimeout = setTimeout(() => {
             if (panel.children.length === 0) panel.style.display = 'none';
         }, 10000);
     };
@@ -43,7 +45,7 @@
         panel.style.display = 'none';
     };
     
-    // Capturer les erreurs JS globales
+    // Capture globale des erreurs JS
     window.addEventListener('error', function(event) {
         logError('JS Error: ' + event.message, { filename: event.filename, line: event.lineno });
     });
