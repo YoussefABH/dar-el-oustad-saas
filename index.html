@@ -2,58 +2,53 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Dar El-Oustad Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dar El-Oustad</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; }
-        
-        /* Layout principal */
-        #app { display: flex; min-height: 100vh; }
-        #sidebar-container { width: 260px; background: #2c3e50; color: white; transition: width 0.3s; }
-        .sidebar-brand { padding: 20px; font-size: 1.4rem; font-weight: bold; text-align: center; border-bottom: 1px solid #3e5a6b; }
-        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-        .sidebar-menu li { padding: 12px 20px; cursor: pointer; transition: background 0.2s; }
-        .sidebar-menu li:hover { background: #1a2a3a; }
-        .sidebar-menu li.active { background: #1abc9c; color: white; font-weight: bold; }
-        #main-container { flex: 1; display: flex; flex-direction: column; }
-        #header-container { background: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
-        #content-container { padding: 24px; flex: 1; }
-        
-        /* Formulaire de connexion */
-        .login-card { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .login-card h1 { text-align: center; margin-bottom: 24px; color: #2c7da0; }
-        .login-card input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 8px; }
-        .login-card button { width: 100%; padding: 12px; background: #2c7da0; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .login-card button:hover { background: #1f5e7a; }
-        .error-msg { color: red; margin-top: 10px; text-align: center; }
-        
-        /* Composants */
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .btn { background: #2c7da0; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        .data-table { width: 100%; border-collapse: collapse; background: white; }
-        .data-table th, .data-table td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
-        .data-table th { background: #f8f9fa; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: white; padding: 24px; border-radius: 16px; width: 90%; max-width: 500px; position: relative; }
-        .close-modal { position: absolute; top: 12px; right: 16px; font-size: 24px; cursor: pointer; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
-        
-        /* Masquer la sidebar et le header avant connexion */
-        .hidden-layout { display: none; }
-        
-        @media (max-width: 768px) { #sidebar-container { width: 70px; } .sidebar-brand span, .sidebar-menu li span { display: none; } .sidebar-menu li { text-align: center; padding: 12px 0; } }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        .login-container { max-width: 400px; margin: 50px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c7da0; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; }
+        button { width: 100%; padding: 10px; background: #2c7da0; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        button:hover { background: #1f5e7a; }
+        .error { color: red; margin-top: 10px; text-align: center; }
+        .dashboard { display: none; }
+        .sidebar { width: 250px; background: #2c3e50; color: white; position: fixed; height: 100%; top: 0; left: 0; padding-top: 20px; }
+        .sidebar a { display: block; padding: 12px 20px; color: white; text-decoration: none; cursor: pointer; }
+        .sidebar a:hover { background: #1a2a3a; }
+        .main-content { margin-left: 260px; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+        @media (max-width: 768px) { .sidebar { width: 100%; height: auto; position: relative; } .main-content { margin-left: 0; } }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div id="app">
-        <div id="sidebar-container" class="hidden-layout"></div>
-        <div id="main-container">
-            <div id="header-container" class="hidden-layout"></div>
-            <main id="content-container"></main>
+    <!-- Formulaire de connexion visible par défaut -->
+    <div id="loginForm" class="login-container">
+        <h1>Dar El-Oustad Pro</h1>
+        <input type="email" id="email" placeholder="Email" autocomplete="email">
+        <input type="password" id="password" placeholder="Mot de passe">
+        <button id="loginBtn">Connexion</button>
+        <button id="registerBtn" style="background:#6c757d;">Créer un compte</button>
+        <div id="errorMsg" class="error"></div>
+    </div>
+
+    <!-- Dashboard (caché au départ) -->
+    <div id="dashboard" style="display:none;">
+        <div class="sidebar">
+            <h3 style="padding: 0 20px;">Dar El-Oustad</h3>
+            <a id="navDashboard">📊 Tableau de bord</a>
+            <a id="navStudents">👩‍🎓 Étudiants</a>
+            <a id="navTeachers">👨‍🏫 Enseignants</a>
+            <a id="navGroups">👥 Groupes</a>
+            <hr style="margin: 20px 0;">
+            <a id="logoutBtn">🚪 Déconnexion</a>
+        </div>
+        <div class="main-content" id="mainContent">
+            <div class="card">Chargement...</div>
         </div>
     </div>
 
@@ -64,134 +59,182 @@
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentUser = null;
-        let currentProfile = null;
-        
-        // Afficher le formulaire de connexion
-        function showLoginForm() {
-            const container = document.getElementById('content-container');
-            container.innerHTML = `
-                <div class="login-card">
-                    <h1>Dar El-Oustad Pro</h1>
-                    <input type="email" id="login-email" placeholder="Email" autocomplete="email">
-                    <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password">
-                    <button id="do-login">Connexion</button>
-                    <button id="do-register" style="margin-top: 10px; background: #6c757d;">Créer un compte</button>
-                    <div id="login-error" class="error-msg"></div>
-                </div>
-            `;
-            document.getElementById('do-login').onclick = async () => {
-                const email = document.getElementById('login-email').value;
-                const pwd = document.getElementById('login-password').value;
-                const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
-                if (error) {
-                    document.getElementById('login-error').innerText = error.message;
-                } else {
-                    await loadDashboard();
-                }
-            };
-            document.getElementById('do-register').onclick = async () => {
-                const email = document.getElementById('login-email').value;
-                const pwd = document.getElementById('login-password').value;
-                const { error } = await supabase.auth.signUp({ email, password: pwd });
-                if (error) alert("Erreur: " + error.message);
-                else alert("Compte créé ! Vérifiez vos emails ou connectez-vous.");
-            };
-        }
-        
-        // Après connexion : masquer le formulaire, afficher layout, charger dashboard
-        async function loadDashboard() {
-            // Récupérer l'utilisateur
-            const { data: { user }, error: userErr } = await supabase.auth.getUser();
-            if (userErr || !user) { showLoginForm(); return; }
-            currentUser = user;
-            
-            // Récupérer le profil
-            const { data: profile, error: profErr } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-            if (profErr || !profile) {
-                console.error("Profil introuvable");
-                showLoginForm();
-                return;
-            }
-            currentProfile = profile;
-            
-            // Afficher sidebar et header
-            document.getElementById('sidebar-container').classList.remove('hidden-layout');
-            document.getElementById('header-container').classList.remove('hidden-layout');
-            
-            // Générer la sidebar
-            const isDirector = (profile.role === 'director');
-            const menus = [
-                { view: 'dashboard', label: 'Tableau de bord', allowed: ['director', 'teacher'] },
-                { view: 'students', label: 'Étudiants', allowed: ['director', 'teacher'] },
-                { view: 'teachers', label: 'Enseignants', allowed: ['director'] },
-                { view: 'groups', label: 'Groupes', allowed: ['director', 'teacher'] }
-            ];
-            const filtered = menus.filter(m => m.allowed.includes(profile.role));
-            const sidebarDiv = document.getElementById('sidebar-container');
-            sidebarDiv.innerHTML = `<div class="sidebar-brand">Dar El-Oustad</div><ul class="sidebar-menu">${filtered.map(m => `<li class="nav-item" data-view="${m.view}">📊 <span>${m.label}</span></li>`).join('')}</ul>`;
-            // Header
-            document.getElementById('header-container').innerHTML = `<div>${profile.centre_id?.substring(0,8) || 'Centre'}</div><button id="logout-btn">Déconnexion</button>`;
-            document.getElementById('logout-btn').onclick = async () => {
-                await supabase.auth.signOut();
-                location.reload();
-            };
-            
-            // Gestion des clics sur la sidebar
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.onclick = () => {
-                    const view = item.dataset.view;
-                    if (view === 'dashboard') showDashboard();
-                    else if (view === 'students') showStudents();
-                    else if (view === 'teachers') showTeachers();
-                    else if (view === 'groups') showGroups();
-                };
-            });
-            
-            // Afficher le tableau de bord par défaut
-            showDashboard();
-        }
-        
-        // Tableau de bord
+        let currentCentreId = null;
+
+        // Éléments DOM
+        const loginDiv = document.getElementById('loginForm');
+        const dashboardDiv = document.getElementById('dashboard');
+        const mainContent = document.getElementById('mainContent');
+        const errorDiv = document.getElementById('errorMsg');
+
+        // Fonctions d'affichage des vues
         async function showDashboard() {
-            const container = document.getElementById('content-container');
-            if (!currentProfile) return;
-            const { data: students } = await supabase.from('students').select('status, payment_amount').eq('centre_id', currentProfile.centre_id);
+            if (!currentCentreId) return;
+            const { data: students, error } = await supabase
+                .from('students')
+                .select('status, payment_amount')
+                .eq('centre_id', currentCentreId);
             const total = students?.length || 0;
             const paid = students?.filter(s => s.status === 'Paid').length || 0;
             const pending = total - paid;
-            const revenue = students?.reduce((sum, s) => sum + (Number(s.payment_amount) || 0), 0) || 0;
-            container.innerHTML = `<div class="card"><h2>Bienvenue, ${currentUser.email}</h2><div style="display:flex; gap:20px; margin-top:20px;"><div>Total étudiants: ${total}</div><div>Payés: ${paid}</div><div>En attente: ${pending}</div><div>Revenus: ${revenue} DH</div></div></div>`;
+            const revenue = students?.reduce((s, a) => s + (Number(a.payment_amount) || 0), 0) || 0;
+            mainContent.innerHTML = `
+                <div class="card">
+                    <h2>Tableau de bord</h2>
+                    <p>Total étudiants: ${total}</p>
+                    <p>Payés: ${paid}</p>
+                    <p>En attente: ${pending}</p>
+                    <p>Revenus: ${revenue} DH</p>
+                </div>
+            `;
         }
-        
-        // Liste des étudiants (version simple)
+
         async function showStudents() {
-            const container = document.getElementById('content-container');
-            const { data: students } = await supabase.from('students').select('*').eq('centre_id', currentProfile.centre_id);
-            if (!students || students.length === 0) {
-                container.innerHTML = `<div class="card"><h3>Étudiants</h3><p>Aucun étudiant.</p></div>`;
+            if (!currentCentreId) return;
+            const { data: students, error } = await supabase
+                .from('students')
+                .select('*')
+                .eq('centre_id', currentCentreId)
+                .order('created_at', { ascending: false });
+            if (error) {
+                mainContent.innerHTML = `<div class="card">Erreur: ${error.message}</div>`;
                 return;
             }
-            let html = `<div class="card"><h3>Liste des étudiants</h3><table class="data-table"><thead><tr><th>Nom</th><th>Niveau</th><th>Paiement</th><th>Statut</th></tr></thead><tbody>`;
+            if (!students || students.length === 0) {
+                mainContent.innerHTML = `<div class="card">Aucun étudiant.</div>`;
+                return;
+            }
+            let html = `<div class="card"><h3>Liste des étudiants</h3><table><thead><tr><th>Nom</th><th>Niveau</th><th>Filière</th><th>Paiement</th><th>Statut</th></tr></thead><tbody>`;
             students.forEach(s => {
-                html += `<tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.level || '-')}</td><td>${s.payment_amount || 0} DH</td><td>${s.status}</td></tr>`;
+                html += `<tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.level || '-')}</td><td>${escapeHtml(s.track || '-')}</td><td>${s.payment_amount || 0} DH</td><td>${s.status}</td></tr>`;
             });
             html += `</tbody></table></div>`;
-            container.innerHTML = html;
+            mainContent.innerHTML = html;
         }
-        
-        async function showTeachers() { /* similaire, on peut simplifier */ container.innerHTML = '<div class="card"><h3>Enseignants</h3><p>Module à venir</p></div>'; }
-        async function showGroups() { container.innerHTML = '<div class="card"><h3>Groupes</h3><p>Module à venir</p></div>'; }
-        
-        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
-        
+
+        async function showTeachers() {
+            if (!currentCentreId) return;
+            const { data: teachers, error } = await supabase
+                .from('teachers')
+                .select('*')
+                .eq('centre_id', currentCentreId);
+            if (error) {
+                mainContent.innerHTML = `<div class="card">Erreur: ${error.message}</div>`;
+                return;
+            }
+            if (!teachers || teachers.length === 0) {
+                mainContent.innerHTML = `<div class="card">Aucun enseignant.</div>`;
+                return;
+            }
+            let html = `<div class="card"><h3>Liste des enseignants</h3><table><thead><tr><th>Nom</th><th>Matière</th><th>Email</th><th>Téléphone</th></tr></thead><tbody>`;
+            teachers.forEach(t => {
+                html += `<tr><td>${escapeHtml(t.full_name)}</td><td>${escapeHtml(t.subject || '-')}</td><td>${escapeHtml(t.email || '-')}</td><td>${escapeHtml(t.phone || '-')}</td></tr>`;
+            });
+            html += `</tbody></table></div>`;
+            mainContent.innerHTML = html;
+        }
+
+        async function showGroups() {
+            if (!currentCentreId) return;
+            const { data: groups, error } = await supabase
+                .from('groups')
+                .select('*')
+                .eq('centre_id', currentCentreId);
+            if (error) {
+                mainContent.innerHTML = `<div class="card">Erreur: ${error.message}</div>`;
+                return;
+            }
+            if (!groups || groups.length === 0) {
+                mainContent.innerHTML = `<div class="card">Aucun groupe.</div>`;
+                return;
+            }
+            let html = `<div class="card"><h3>Liste des groupes</h3><table><thead><tr><th>Nom</th><th>Description</th><th>Enseignant</th></tr></thead><tbody>`;
+            for (const g of groups) {
+                let teacherName = '';
+                if (g.teacher_id) {
+                    const { data: teacher } = await supabase.from('teachers').select('full_name').eq('id', g.teacher_id).single();
+                    teacherName = teacher ? teacher.full_name : '';
+                }
+                html += `<tr><td>${escapeHtml(g.name)}</td><td>${escapeHtml(g.description || '-')}</td><td>${escapeHtml(teacherName)}</td></tr>`;
+            }
+            html += `</tbody></table></div>`;
+            mainContent.innerHTML = html;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // Authentification
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                errorDiv.innerText = error.message;
+                return;
+            }
+            await afterLogin();
+        }
+
+        async function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                errorDiv.innerText = error.message;
+            } else {
+                alert("Compte créé ! Vérifiez votre email ou connectez-vous.");
+            }
+        }
+
+        async function afterLogin() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            currentUser = user;
+            // Récupérer le profil
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('centre_id')
+                .eq('id', user.id)
+                .single();
+            if (error || !profile) {
+                errorDiv.innerText = "Profil introuvable";
+                return;
+            }
+            currentCentreId = profile.centre_id;
+            // Afficher le dashboard
+            loginDiv.style.display = 'none';
+            dashboardDiv.style.display = 'block';
+            await showDashboard();
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            loginDiv.style.display = 'block';
+            dashboardDiv.style.display = 'none';
+            currentUser = null;
+            currentCentreId = null;
+        }
+
+        // Navigation
+        document.getElementById('loginBtn').onclick = login;
+        document.getElementById('registerBtn').onclick = register;
+        document.getElementById('logoutBtn').onclick = logout;
+        document.getElementById('navDashboard').onclick = showDashboard;
+        document.getElementById('navStudents').onclick = showStudents;
+        document.getElementById('navTeachers').onclick = showTeachers;
+        document.getElementById('navGroups').onclick = showGroups;
+
         // Vérifier si déjà connecté
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) loadDashboard();
-            else showLoginForm();
+            if (session) afterLogin();
         });
     </script>
 </body>
