@@ -2,131 +2,153 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Dar El-Oustad SaaS</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Dar El-Oustad - Diagnostic intégré</title>
+    <style>
+        body { font-family: monospace; padding: 20px; max-width: 800px; margin: auto; }
+        input, button { display: block; width: 100%; padding: 10px; margin: 10px 0; }
+        .dashboard { display: none; }
+        .error { color: red; background: #ffe0e0; padding: 5px; margin: 5px 0; }
+        .success { color: green; }
+        .log { background: #f0f0f0; padding: 10px; margin-top: 20px; font-size: 12px; overflow-x: auto; }
+        .student-card { border: 1px solid #ccc; padding: 10px; margin: 5px 0; }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/logger.js"></script>
-    <script src="js/config/supabase.js"></script>
 </head>
 <body>
-    <div id="app">
-        <div id="login-view">
-            <h1>Dar El-Oustad Pro</h1>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Mot de passe">
-            <button id="login-btn">Connexion</button>
-            <button id="register-btn">Créer un compte</button>
-        </div>
-        <div id="dashboard-view" style="display:none;">
-            <div class="dashboard-header">
-                <h2>Dashboard</h2>
-                <div id="center-name" class="center-name"></div>
-                <button id="logout-btn" class="logout-btn">Déconnexion</button>
-            </div>
-            <div id="director-section" style="display:none;">
-                <div class="add-student-section">
-                    <h3>Ajouter un étudiant</h3>
-                    <div class="form-row">
-                        <input type="text" id="student-name" placeholder="Nom complet">
-                        <input type="text" id="student-level" placeholder="Niveau">
-                        <input type="text" id="student-track" placeholder="Filière">
-                        <input type="number" id="student-payment" placeholder="Paiement (DH)">
-                        <select id="student-status">
-                            <option value="Paid">Payé</option>
-                            <option value="Pending">En attente</option>
-                        </select>
-                        <button id="add-student-btn">Ajouter étudiant</button>
-                    </div>
-                </div>
-                <div class="teachers-section">
-                    <h3>Gestion des enseignants</h3>
-                    <div class="form-row">
-                        <input type="text" id="teacher-name" placeholder="Nom complet">
-                        <input type="text" id="teacher-subject" placeholder="Matière">
-                        <input type="email" id="teacher-email" placeholder="Email">
-                        <input type="tel" id="teacher-phone" placeholder="Téléphone">
-                        <button id="add-teacher-btn">Ajouter enseignant</button>
-                    </div>
-                    <div id="teachers-list-container"></div>
-                </div>
-                <div class="parents-section">
-                    <h3>Gestion des parents</h3>
-                    <div class="form-row">
-                        <input type="text" id="parent-name" placeholder="Nom complet">
-                        <input type="email" id="parent-email" placeholder="Email">
-                        <input type="tel" id="parent-phone" placeholder="Téléphone">
-                        <button id="add-parent-btn">Ajouter parent</button>
-                    </div>
-                    <div id="parents-list-container"></div>
-                </div>
-            </div>
-            <div class="stats-section">
-                <h3>Statistiques</h3>
-                <div class="stats-grid">
-                    <div class="stat-card">Total : <span id="totalStudents">0</span></div>
-                    <div class="stat-card">Payés : <span id="paidStudents">0</span></div>
-                    <div class="stat-card">En attente : <span id="pendingStudents">0</span></div>
-                    <div class="stat-card">Revenus : <span id="revenue">0</span> DH</div>
-                </div>
-            </div>
-            <div class="students-list-section">
-                <h3>Liste des étudiants</h3>
-                <div id="students-container"></div>
-            </div>
-        </div>
+    <div id="login-view">
+        <h2>Connexion</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Mot de passe">
+        <button id="login-btn">Se connecter</button>
+        <button id="register-btn">Créer un compte</button>
+        <div id="error-msg" style="color:red;"></div>
     </div>
 
-    <!-- Modals -->
-    <div id="edit-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h3>Modifier l'étudiant</h3>
-            <input type="hidden" id="edit-student-id">
-            <input type="text" id="edit-name" placeholder="Nom">
-            <input type="text" id="edit-level" placeholder="Niveau">
-            <input type="text" id="edit-track" placeholder="Filière">
-            <input type="number" id="edit-payment" placeholder="Paiement">
-            <select id="edit-status">
-                <option value="Paid">Payé</option>
-                <option value="Pending">En attente</option>
-            </select>
-            <button id="save-edit-btn">Enregistrer</button>
-        </div>
+    <div id="dashboard-view" class="dashboard">
+        <h2>Dashboard</h2>
+        <button id="logout-btn">Déconnexion</button>
+        <div id="center-info"></div>
+        <div id="stats"></div>
+        <h3>Liste des étudiants</h3>
+        <div id="students-list"></div>
+        <div id="diagnostic-log" class="log"></div>
     </div>
-    <div id="edit-teacher-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h3>Modifier l'enseignant</h3>
-            <input type="hidden" id="edit-teacher-id">
-            <input type="text" id="edit-teacher-name" placeholder="Nom">
-            <input type="text" id="edit-teacher-subject" placeholder="Matière">
-            <input type="email" id="edit-teacher-email" placeholder="Email">
-            <input type="tel" id="edit-teacher-phone" placeholder="Téléphone">
-            <button id="save-edit-teacher-btn">Enregistrer</button>
-        </div>
-    </div>
-    <div id="edit-parent-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h3>Modifier le parent</h3>
-            <input type="hidden" id="edit-parent-id">
-            <input type="text" id="edit-parent-name" placeholder="Nom">
-            <input type="email" id="edit-parent-email" placeholder="Email">
-            <input type="tel" id="edit-parent-phone" placeholder="Téléphone">
-            <button id="save-edit-parent-btn">Enregistrer</button>
-        </div>
-    </div>
-    <div id="link-parents-modal" class="modal" style="display:none;"></div>
 
-    <script src="js/utils/dom.js"></script>
-    <script src="js/utils/validators.js"></script>
-    <script src="js/modules/auth.js"></script>
-    <script src="js/modules/center.js"></script>
-    <script src="js/modules/students.js"></script>
-    <script src="js/modules/dashboard.js"></script>
-    <script src="js/modules/teachers.js"></script>
-    <script src="js/modules/parents.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        const SUPABASE_URL = "https://ecwlqiuvgmikglnfybon.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_ROrM2kw2PBgsYr1xq7Oi4w_pThtprFF";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function addDiagnostic(msg, isError = false) {
+            const logDiv = document.getElementById('diagnostic-log');
+            if (logDiv) {
+                const line = document.createElement('div');
+                line.textContent = new Date().toLocaleTimeString() + ' : ' + msg;
+                if (isError) line.style.color = 'red';
+                logDiv.appendChild(line);
+            }
+            console.log(msg);
+        }
+
+        async function afterLogin() {
+            addDiagnostic("afterLogin démarré");
+            const { data: { user }, error: userErr } = await supabaseClient.auth.getUser();
+            if (userErr) { addDiagnostic("Erreur getUser: " + userErr.message, true); return; }
+            if (!user) { addDiagnostic("Aucun utilisateur", true); return; }
+            addDiagnostic("Utilisateur: " + user.email);
+
+            // Profil
+            const { data: profile, error: profErr } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            if (profErr) { addDiagnostic("Erreur profiles: " + profErr.message, true); return; }
+            addDiagnostic("Profil trouvé: centre_id=" + profile.centre_id + ", role=" + profile.role);
+            document.getElementById('center-info').innerHTML = `Centre ID: ${profile.centre_id} - Rôle: ${profile.role}`;
+
+            // Students
+            const { data: students, error: stuErr } = await supabaseClient
+                .from('students')
+                .select('*')
+                .eq('centre_id', profile.centre_id);
+            if (stuErr) { addDiagnostic("Erreur students: " + stuErr.message, true); return; }
+            addDiagnostic("Étudiants trouvés: " + students.length);
+            const total = students.length;
+            const paid = students.filter(s => s.status === 'Paid').length;
+            const pending = students.filter(s => s.status === 'Pending').length;
+            const revenue = students.reduce((sum, s) => sum + (Number(s.payment_amount) || 0), 0);
+            document.getElementById('stats').innerHTML = `Total: ${total} | Payés: ${paid} | En attente: ${pending} | Revenus: ${revenue} DH`;
+            document.getElementById('students-list').innerHTML = students.map(s => `<div class="student-card"><strong>${escapeHtml(s.name)}</strong><br>Niveau: ${s.level || '-'} | Filière: ${s.track || '-'}<br>Paiement: ${s.payment_amount || 0} DH | Statut: ${s.status}</div>`).join('');
+
+            // Teachers (optionnel)
+            const { data: teachers, error: teaErr } = await supabaseClient
+                .from('teachers')
+                .select('*')
+                .eq('centre_id', profile.centre_id);
+            if (teaErr) addDiagnostic("Erreur teachers: " + teaErr.message, true);
+            else addDiagnostic("Enseignants trouvés: " + (teachers?.length || 0));
+
+            // Parents (optionnel)
+            const { data: parents, error: parErr } = await supabaseClient
+                .from('parents')
+                .select('*')
+                .eq('centre_id', profile.centre_id);
+            if (parErr) addDiagnostic("Erreur parents: " + parErr.message, true);
+            else addDiagnostic("Parents trouvés: " + (parents?.length || 0));
+
+            addDiagnostic("Affichage terminé, basculement dashboard");
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'block';
+        }
+
+        async function login() {
+            addDiagnostic("login() appelée");
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) { 
+                addDiagnostic("Erreur connexion: " + error.message, true);
+                document.getElementById('error-msg').innerText = error.message;
+                return;
+            }
+            addDiagnostic("Connexion réussie pour " + data.user.email);
+            await afterLogin();
+        }
+
+        async function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) { alert("Erreur: " + error.message); }
+            else { alert("Compte créé ! Vérifiez votre email ou connectez-vous."); }
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            document.getElementById('login-view').style.display = 'block';
+            document.getElementById('dashboard-view').style.display = 'none';
+            addDiagnostic("Déconnecté");
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        document.getElementById('login-btn').onclick = login;
+        document.getElementById('register-btn').onclick = register;
+        document.getElementById('logout-btn').onclick = logout;
+
+        // Vérifier session existante
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session) afterLogin();
+        });
+    </script>
 </body>
-    </html>
+</html>
