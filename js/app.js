@@ -1,30 +1,32 @@
-document.addEventListener('DOMContentLoaded', () => {
-    alert("app.js chargé - DOM prêt");
+window.login = async function() {
+    alert("login() appelée");
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    alert("Email: " + email + " / Password length: " + password.length);
 
-    const loginBtn = document.getElementById('login-btn');
-    const registerBtn = document.getElementById('register-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-
-    if (loginBtn) {
-        loginBtn.onclick = () => {
-            alert("Clic sur le bouton Connexion détecté !");
-            window.login(); // appelle la fonction globale
-        };
-    } else {
-        alert("Bouton login non trouvé ! Vérifiez l'ID dans index.html");
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) {
+        alert("Erreur Supabase: " + error.message);
+        return;
     }
+    alert("Connexion réussie !");
+    // Afficher le dashboard
+    document.getElementById("login-view").style.display = "none";
+    document.getElementById("dashboard-view").style.display = "block";
+};
 
-    if (registerBtn) {
-        registerBtn.onclick = () => {
-            alert("Clic inscription");
-            window.register();
-        };
-    }
+window.register = async function() {
+    alert("register() appelée");
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const { error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) alert("Erreur: " + error.message);
+    else alert("Compte créé ! Vérifiez vos emails ou connectez-vous.");
+};
 
-    if (logoutBtn) {
-        logoutBtn.onclick = () => {
-            alert("Clic déconnexion");
-            window.logout();
-        };
-    }
-});
+window.logout = async function() {
+    await supabaseClient.auth.signOut();
+    document.getElementById("login-view").style.display = "block";
+    document.getElementById("dashboard-view").style.display = "none";
+    alert("Déconnecté");
+};
