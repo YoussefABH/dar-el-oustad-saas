@@ -1,37 +1,18 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Test Supabase</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Minimal test</title>
 </head>
 <body>
-    <h1>Test de connexion Supabase</h1>
-    <button onclick="testLogin()">Tester la connexion</button>
-    <pre id="result"></pre>
-
+    <h1>Test</h1>
+    <button id="btn">Cliquez</button>
+    <p id="out"></p>
     <script>
-        // REMPLACEZ ICI PAR VOS VRAIES IDENTIFIANTS
-        const SUPABASE_URL = "https://ecwlqiuvgmikglnfybon.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_ROrM2kw2PBgsYr1xq7Oi4w_pThtprFF";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        async function testLogin() {
-            const email = prompt("Entrez votre email:");
-            const password = prompt("Entrez votre mot de passe:");
-            const resultDiv = document.getElementById("result");
-            resultDiv.textContent = "Connexion en cours...";
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) {
-                    resultDiv.textContent = "Erreur : " + error.message;
-                } else {
-                    resultDiv.textContent = "Succès ! Utilisateur : " + data.user.email;
-                }
-            } catch (err) {
-                resultDiv.textContent = "Exception : " + err.message;
-            }
-        }
+        document.getElementById('btn').onclick = function() {
+            document.getElementById('out').innerHTML = 'Cliqué !';
+            alert('Cliqué !');
+        };
+        alert('Page chargée');
     </script>
 </body>
 </html>
