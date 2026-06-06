@@ -2,135 +2,359 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Dar El-Oustad - Diagnostic intégré</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dar El-Oustad - Application complète</title>
     <style>
-        body { font-family: monospace; padding: 20px; max-width: 800px; margin: auto; }
-        input, button { display: block; width: 100%; padding: 10px; margin: 10px 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1200px; margin: auto; background: #f0f2f5; }
+        input, select, button { padding: 10px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; }
+        button { background: #2c7da0; color: white; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1f5e7a; }
         .dashboard { display: none; }
-        .error { color: red; background: #ffe0e0; padding: 5px; margin: 5px 0; }
-        .success { color: green; }
-        .log { background: #f0f0f0; padding: 10px; margin-top: 20px; font-size: 12px; overflow-x: auto; }
-        .student-card { border: 1px solid #ccc; padding: 10px; margin: 5px 0; }
+        .form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 15px; }
+        .form-row input, .form-row select, .form-row button { flex: 1 1 150px; }
+        .card { background: white; padding: 12px; margin-top: 8px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .stats { background: white; padding: 15px; border-radius: 12px; margin: 15px 0; display: flex; gap: 20px; flex-wrap: wrap; }
+        .stat-item { flex: 1; text-align: center; background: #e9f1f5; padding: 10px; border-radius: 10px; }
+        .log { background: #333; color: #0f0; padding: 10px; margin-top: 20px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; border-radius: 8px; }
+        .error { color: red; }
+        h1, h2, h3 { color: #1e3c4a; }
+        #login-view { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <!-- Écran de connexion -->
     <div id="login-view">
-        <h2>Connexion</h2>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Mot de passe">
-        <button id="login-btn">Se connecter</button>
+        <h1>Dar El-Oustad Pro</h1>
+        <input type="email" id="email" placeholder="Email" autocomplete="email">
+        <input type="password" id="password" placeholder="Mot de passe" autocomplete="current-password">
+        <button id="login-btn">Connexion</button>
         <button id="register-btn">Créer un compte</button>
-        <div id="error-msg" style="color:red;"></div>
+        <div id="error-msg" style="color:red; margin-top:10px;"></div>
     </div>
 
+    <!-- Tableau de bord -->
     <div id="dashboard-view" class="dashboard">
-        <h2>Dashboard</h2>
-        <button id="logout-btn">Déconnexion</button>
-        <div id="center-info"></div>
-        <div id="stats"></div>
-        <h3>Liste des étudiants</h3>
-        <div id="students-list"></div>
-        <div id="diagnostic-log" class="log"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 20px; border-radius: 12px;">
+            <h2>Dashboard</h2>
+            <div id="center-name" style="font-weight: bold;"></div>
+            <button id="logout-btn">Déconnexion</button>
+        </div>
+
+        <!-- Section directeur (visible uniquement pour le rôle director) -->
+        <div id="director-section">
+            <!-- Ajout étudiant -->
+            <div style="background: white; padding: 15px; border-radius: 12px; margin: 15px 0;">
+                <h3>Ajouter un étudiant</h3>
+                <div class="form-row">
+                    <input type="text" id="student-name" placeholder="Nom complet">
+                    <input type="text" id="student-level" placeholder="Niveau">
+                    <input type="text" id="student-track" placeholder="Filière">
+                    <input type="number" id="student-payment" placeholder="Paiement (DH)">
+                    <select id="student-status">
+                        <option value="Paid">Payé</option>
+                        <option value="Pending">En attente</option>
+                    </select>
+                    <button id="add-student-btn">Ajouter</button>
+                </div>
+            </div>
+
+            <!-- Ajout enseignant -->
+            <div style="background: white; padding: 15px; border-radius: 12px; margin: 15px 0;">
+                <h3>Ajouter un enseignant</h3>
+                <div class="form-row">
+                    <input type="text" id="teacher-name" placeholder="Nom complet">
+                    <input type="text" id="teacher-subject" placeholder="Matière">
+                    <input type="email" id="teacher-email" placeholder="Email">
+                    <input type="tel" id="teacher-phone" placeholder="Téléphone">
+                    <button id="add-teacher-btn">Ajouter</button>
+                </div>
+                <div id="teachers-list"></div>
+            </div>
+
+            <!-- Ajout parent -->
+            <div style="background: white; padding: 15px; border-radius: 12px; margin: 15px 0;">
+                <h3>Ajouter un parent</h3>
+                <div class="form-row">
+                    <input type="text" id="parent-name" placeholder="Nom complet">
+                    <input type="email" id="parent-email" placeholder="Email">
+                    <input type="tel" id="parent-phone" placeholder="Téléphone">
+                    <button id="add-parent-btn">Ajouter</button>
+                </div>
+                <div id="parents-list"></div>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="stats" id="stats-container"></div>
+
+        <!-- Liste des étudiants -->
+        <div style="background: white; padding: 15px; border-radius: 12px; margin: 15px 0;">
+            <h3>Liste des étudiants</h3>
+            <div id="students-list"></div>
+        </div>
+
+        <!-- Panneau de diagnostic -->
+        <div class="log" id="diagnostic-log"></div>
     </div>
 
     <script>
+        // ==================== CONFIGURATION ====================
         const SUPABASE_URL = "https://ecwlqiuvgmikglnfybon.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_ROrM2kw2PBgsYr1xq7Oi4w_pThtprFF";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Variables globales
+        let currentUser = null;
+        let currentProfile = null;
+
+        // ==================== DIAGNOSTIC ====================
         function addDiagnostic(msg, isError = false) {
             const logDiv = document.getElementById('diagnostic-log');
             if (logDiv) {
                 const line = document.createElement('div');
                 line.textContent = new Date().toLocaleTimeString() + ' : ' + msg;
-                if (isError) line.style.color = 'red';
+                if (isError) line.style.color = '#ff8888';
                 logDiv.appendChild(line);
+                logDiv.scrollTop = logDiv.scrollHeight;
             }
             console.log(msg);
         }
 
-        async function afterLogin() {
-            addDiagnostic("afterLogin démarré");
-            const { data: { user }, error: userErr } = await supabaseClient.auth.getUser();
+        // ==================== AFFICHAGE ====================
+        async function loadStudents() {
+            if (!currentProfile) return;
+            addDiagnostic("Chargement des étudiants...");
+            const { data, error } = await supabase
+                .from('students')
+                .select('*')
+                .eq('centre_id', currentProfile.centre_id);
+            if (error) {
+                addDiagnostic("Erreur chargement étudiants: " + error.message, true);
+                return;
+            }
+            addDiagnostic("Étudiants trouvés: " + data.length);
+            const container = document.getElementById('students-list');
+            if (data.length === 0) {
+                container.innerHTML = '<p>Aucun étudiant</p>';
+            } else {
+                container.innerHTML = data.map(s => `
+                    <div class="card">
+                        <div>
+                            <strong>${escapeHtml(s.name)}</strong><br>
+                            Niveau: ${escapeHtml(s.level || '-')} | Filière: ${escapeHtml(s.track || '-')}<br>
+                            Paiement: ${s.payment_amount || 0} DH | Statut: ${s.status}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            // Mettre à jour les stats
+            const total = data.length;
+            const paid = data.filter(s => s.status === 'Paid').length;
+            const pending = data.filter(s => s.status === 'Pending').length;
+            const revenue = data.filter(s => s.status === 'Paid').reduce((sum, s) => sum + (Number(s.payment_amount) || 0), 0);
+            document.getElementById('stats-container').innerHTML = `
+                <div class="stat-item">Total étudiants: <strong>${total}</strong></div>
+                <div class="stat-item">Payés: <strong>${paid}</strong></div>
+                <div class="stat-item">En attente: <strong>${pending}</strong></div>
+                <div class="stat-item">Revenus: <strong>${revenue} DH</strong></div>
+            `;
+        }
+
+        async function loadTeachers() {
+            if (!currentProfile) return;
+            const { data, error } = await supabase
+                .from('teachers')
+                .select('*')
+                .eq('centre_id', currentProfile.centre_id);
+            if (error) {
+                addDiagnostic("Erreur chargement enseignants: " + error.message, true);
+                return;
+            }
+            const container = document.getElementById('teachers-list');
+            if (data.length === 0) {
+                container.innerHTML = '<p>Aucun enseignant</p>';
+            } else {
+                container.innerHTML = data.map(t => `
+                    <div class="card">
+                        <div><strong>${escapeHtml(t.full_name)}</strong> ${t.subject ? '('+escapeHtml(t.subject)+')' : ''}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function loadParents() {
+            if (!currentProfile) return;
+            const { data, error } = await supabase
+                .from('parents')
+                .select('*')
+                .eq('centre_id', currentProfile.centre_id);
+            if (error) {
+                addDiagnostic("Erreur chargement parents: " + error.message, true);
+                return;
+            }
+            const container = document.getElementById('parents-list');
+            if (data.length === 0) {
+                container.innerHTML = '<p>Aucun parent</p>';
+            } else {
+                container.innerHTML = data.map(p => `
+                    <div class="card">
+                        <div><strong>${escapeHtml(p.full_name)}</strong> ${p.email ? '('+escapeHtml(p.email)+')' : ''}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // ==================== ACTIONS CRUD ====================
+        async function addStudent() {
+            if (!currentProfile || currentProfile.role !== 'director') {
+                addDiagnostic("Non autorisé: seul le directeur peut ajouter", true);
+                return;
+            }
+            const name = document.getElementById('student-name').value;
+            if (!name) { addDiagnostic("Nom requis", true); return; }
+            const level = document.getElementById('student-level').value;
+            const track = document.getElementById('student-track').value;
+            const payment = parseFloat(document.getElementById('student-payment').value) || 0;
+            const status = document.getElementById('student-status').value;
+            addDiagnostic(`Ajout étudiant: ${name}`);
+            const { error } = await supabase
+                .from('students')
+                .insert([{
+                    centre_id: currentProfile.centre_id,
+                    name, level, track,
+                    payment_amount: payment,
+                    status,
+                    created_by: currentUser.id
+                }]);
+            if (error) {
+                addDiagnostic("Erreur insertion étudiant: " + error.message, true);
+                return;
+            }
+            addDiagnostic("Étudiant ajouté avec succès");
+            document.getElementById('student-name').value = '';
+            document.getElementById('student-level').value = '';
+            document.getElementById('student-track').value = '';
+            document.getElementById('student-payment').value = '';
+            document.getElementById('student-status').value = 'Pending';
+            await loadStudents();
+        }
+
+        async function addTeacher() {
+            if (!currentProfile || currentProfile.role !== 'director') return;
+            const full_name = document.getElementById('teacher-name').value;
+            if (!full_name) { addDiagnostic("Nom enseignant requis", true); return; }
+            const subject = document.getElementById('teacher-subject').value;
+            const email = document.getElementById('teacher-email').value;
+            const phone = document.getElementById('teacher-phone').value;
+            const { error } = await supabase
+                .from('teachers')
+                .insert([{
+                    centre_id: currentProfile.centre_id,
+                    full_name, subject, email, phone,
+                    created_by: currentUser.id
+                }]);
+            if (error) {
+                addDiagnostic("Erreur ajout enseignant: " + error.message, true);
+                return;
+            }
+            addDiagnostic("Enseignant ajouté");
+            document.getElementById('teacher-name').value = '';
+            document.getElementById('teacher-subject').value = '';
+            document.getElementById('teacher-email').value = '';
+            document.getElementById('teacher-phone').value = '';
+            await loadTeachers();
+        }
+
+        async function addParent() {
+            if (!currentProfile || currentProfile.role !== 'director') return;
+            const full_name = document.getElementById('parent-name').value;
+            if (!full_name) { addDiagnostic("Nom parent requis", true); return; }
+            const email = document.getElementById('parent-email').value;
+            const phone = document.getElementById('parent-phone').value;
+            const { error } = await supabase
+                .from('parents')
+                .insert([{
+                    centre_id: currentProfile.centre_id,
+                    full_name, email, phone,
+                    created_by: currentUser.id
+                }]);
+            if (error) {
+                addDiagnostic("Erreur ajout parent: " + error.message, true);
+                return;
+            }
+            addDiagnostic("Parent ajouté");
+            document.getElementById('parent-name').value = '';
+            document.getElementById('parent-email').value = '';
+            document.getElementById('parent-phone').value = '';
+            await loadParents();
+        }
+
+        // ==================== AUTHENTIFICATION ====================
+        async function loadDashboard() {
+            addDiagnostic("loadDashboard démarré");
+            const { data: { user }, error: userErr } = await supabase.auth.getUser();
             if (userErr) { addDiagnostic("Erreur getUser: " + userErr.message, true); return; }
             if (!user) { addDiagnostic("Aucun utilisateur", true); return; }
+            currentUser = user;
             addDiagnostic("Utilisateur: " + user.email);
 
-            // Profil
-            const { data: profile, error: profErr } = await supabaseClient
+            const { data: profile, error: profErr } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', user.id)
                 .single();
             if (profErr) { addDiagnostic("Erreur profiles: " + profErr.message, true); return; }
-            addDiagnostic("Profil trouvé: centre_id=" + profile.centre_id + ", role=" + profile.role);
-            document.getElementById('center-info').innerHTML = `Centre ID: ${profile.centre_id} - Rôle: ${profile.role}`;
+            currentProfile = profile;
+            addDiagnostic("Profil: centre_id=" + profile.centre_id + ", role=" + profile.role);
+            document.getElementById('center-name').innerHTML = `Centre: ${profile.centre_id.substring(0,8)}... | Rôle: ${profile.role}`;
 
-            // Students
-            const { data: students, error: stuErr } = await supabaseClient
-                .from('students')
-                .select('*')
-                .eq('centre_id', profile.centre_id);
-            if (stuErr) { addDiagnostic("Erreur students: " + stuErr.message, true); return; }
-            addDiagnostic("Étudiants trouvés: " + students.length);
-            const total = students.length;
-            const paid = students.filter(s => s.status === 'Paid').length;
-            const pending = students.filter(s => s.status === 'Pending').length;
-            const revenue = students.reduce((sum, s) => sum + (Number(s.payment_amount) || 0), 0);
-            document.getElementById('stats').innerHTML = `Total: ${total} | Payés: ${paid} | En attente: ${pending} | Revenus: ${revenue} DH`;
-            document.getElementById('students-list').innerHTML = students.map(s => `<div class="student-card"><strong>${escapeHtml(s.name)}</strong><br>Niveau: ${s.level || '-'} | Filière: ${s.track || '-'}<br>Paiement: ${s.payment_amount || 0} DH | Statut: ${s.status}</div>`).join('');
+            // Afficher ou masquer la section directeur
+            const isDirector = (profile.role === 'director');
+            document.getElementById('director-section').style.display = isDirector ? 'block' : 'none';
 
-            // Teachers (optionnel)
-            const { data: teachers, error: teaErr } = await supabaseClient
-                .from('teachers')
-                .select('*')
-                .eq('centre_id', profile.centre_id);
-            if (teaErr) addDiagnostic("Erreur teachers: " + teaErr.message, true);
-            else addDiagnostic("Enseignants trouvés: " + (teachers?.length || 0));
+            await loadStudents();
+            await loadTeachers();
+            await loadParents();
 
-            // Parents (optionnel)
-            const { data: parents, error: parErr } = await supabaseClient
-                .from('parents')
-                .select('*')
-                .eq('centre_id', profile.centre_id);
-            if (parErr) addDiagnostic("Erreur parents: " + parErr.message, true);
-            else addDiagnostic("Parents trouvés: " + (parents?.length || 0));
-
-            addDiagnostic("Affichage terminé, basculement dashboard");
             document.getElementById('login-view').style.display = 'none';
             document.getElementById('dashboard-view').style.display = 'block';
+            addDiagnostic("Dashboard affiché avec succès");
         }
 
         async function login() {
-            addDiagnostic("login() appelée");
+            addDiagnostic("Tentative de connexion");
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) { 
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
                 addDiagnostic("Erreur connexion: " + error.message, true);
                 document.getElementById('error-msg').innerText = error.message;
                 return;
             }
-            addDiagnostic("Connexion réussie pour " + data.user.email);
-            await afterLogin();
+            addDiagnostic("Connexion réussie");
+            await loadDashboard();
         }
 
         async function register() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) { alert("Erreur: " + error.message); }
-            else { alert("Compte créé ! Vérifiez votre email ou connectez-vous."); }
+            const { error } = await supabase.auth.signUp({ email, password });
+            if (error) {
+                alert("Erreur: " + error.message);
+            } else {
+                alert("Compte créé ! Connectez-vous.");
+            }
         }
 
         async function logout() {
-            await supabaseClient.auth.signOut();
+            await supabase.auth.signOut();
             document.getElementById('login-view').style.display = 'block';
             document.getElementById('dashboard-view').style.display = 'none';
             addDiagnostic("Déconnecté");
         }
 
+        // ==================== UTILITAIRES ====================
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -141,13 +365,17 @@
             });
         }
 
+        // ==================== ÉVÉNEMENTS ====================
         document.getElementById('login-btn').onclick = login;
         document.getElementById('register-btn').onclick = register;
         document.getElementById('logout-btn').onclick = logout;
+        document.getElementById('add-student-btn').onclick = addStudent;
+        document.getElementById('add-teacher-btn').onclick = addTeacher;
+        document.getElementById('add-parent-btn').onclick = addParent;
 
-        // Vérifier session existante
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) afterLogin();
+        // Vérifier si déjà connecté
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) loadDashboard();
         });
     </script>
 </body>
