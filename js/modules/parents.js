@@ -101,7 +101,7 @@ async function deleteParent(id) {
     if (error) throw error;
 }
 
-// Modal d'édition parent
+// Modal d'édition
 let currentEditParentId = null;
 
 function openEditParentModal(id, name, email, phone) {
@@ -174,13 +174,23 @@ function initParentForm() {
     });
 }
 
-// Lier un parent à un étudiant
+// Liaison parent-étudiant
 async function loadParentsForStudent(studentId) {
+    const user = await getCurrentUser();
+    if (!user) return [];
+    const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('centre_id')
+        .eq('id', user.id)
+        .single();
+    if (!profile || !profile.centre_id) return [];
+
     const { data: allParents, error } = await supabaseClient
         .from('parents')
-        .select('id, full_name');
+        .select('id, full_name')
+        .eq('centre_id', profile.centre_id);
     if (error) return [];
-    // Récupérer les parents déjà liés
+
     const { data: linked } = await supabaseClient
         .from('student_parents')
         .select('parent_id')
@@ -203,4 +213,4 @@ async function linkParentToStudent(parentId, studentId, shouldLink) {
             .eq('parent_id', parentId);
         if (error) throw error;
     }
-}
+        }
