@@ -1,16 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Écouteurs de base
+    // Écouteurs
     document.getElementById('login-btn').addEventListener('click', login);
     document.getElementById('register-btn').addEventListener('click', register);
     document.getElementById('logout-btn').addEventListener('click', logout);
     document.getElementById('add-student-btn').addEventListener('click', addStudent);
 
     // Initialisation des modals
-    initEditModal();
-    initTeacherModal();
-    initParentModal();
-    initTeacherForm();
-    initParentForm();
+    if (typeof initEditModal === 'function') initEditModal();
+    if (typeof initTeacherModal === 'function') initTeacherModal();
+    if (typeof initParentModal === 'function') initParentModal();
+    if (typeof initTeacherForm === 'function') initTeacherForm();
+    if (typeof initParentForm === 'function') initParentForm();
 
     // Vérifier session existante
     supabaseClient.auth.getSession().then(({ data: { session } }) => {
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Écouter changements auth
+    // Écouter les changements d'état de connexion
     supabaseClient.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_IN' && session) {
             afterLogin();
@@ -30,13 +30,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-// Redéfinition de afterLogin pour charger les listes supplémentaires
-const originalAfterLogin = afterLogin;
-window.afterLogin = async function() {
-    await originalAfterLogin();
-    if (document.getElementById("dashboard-view").style.display === "block") {
-        loadTeachersList();
-        loadParentsList();
-    }
-};
