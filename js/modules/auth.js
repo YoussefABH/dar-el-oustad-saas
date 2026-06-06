@@ -1,25 +1,40 @@
 async function getCurrentUser() {
-    const { data: { user }, error } = await supabaseClient.auth.getUser();
-    if (error || !user) return null;
-    return user;
+    try {
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
+        if (error) throw error;
+        return user;
+    } catch (e) {
+        logError("getCurrentUser failed", e.message);
+        return null;
+    }
 }
 
 async function register() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    if (!validateEmail(email)) { showAlert("Email invalide", "error"); return; }
-    if (password.length < 6) { showAlert("Mot de passe trop court", "error"); return; }
-    const { error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) { showAlert(error.message, "error"); return; }
-    showAlert("Compte créé ! Vérifiez votre email (ou connectez-vous)", "success");
+    try {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        if (!validateEmail(email)) { showAlert("Email invalide", "error"); return; }
+        if (password.length < 6) { showAlert("Mot de passe trop court", "error"); return; }
+        const { error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) throw error;
+        showAlert("Compte créé ! Connectez-vous.", "success");
+    } catch (e) {
+        logError("register", e.message);
+        showAlert("Erreur inscription: " + e.message, "error");
+    }
 }
 
 async function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) { showAlert(error.message, "error"); return; }
-    await afterLogin();
+    try {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        await afterLogin();
+    } catch (e) {
+        logError("login", e.message);
+        showAlert("Erreur connexion: " + e.message, "error");
+    }
 }
 
 async function logout() {
@@ -30,33 +45,24 @@ async function logout() {
 }
 
 async function afterLogin() {
-    alert("afterLogin - début");
-    const user = await getCurrentUser();
-    alert("user: " + (user ? user.email : "null"));
-    if (!user) return;
-
-    alert("Appel loadCenterInfo");
-    await loadCenterInfo();
-    alert("loadCenterInfo terminé");
-
-    alert("Appel loadDashboardStats");
-    await loadDashboardStats();
-    alert("loadDashboardStats terminé");
-
-    alert("Appel loadStudentsList");
-    await loadStudentsList();
-    alert("loadStudentsList terminé");
-
-    const isDir = await isDirector();
-    alert("isDirector: " + isDir);
-    const directorSection = document.getElementById("director-section");
-    if (directorSection) directorSection.style.display = isDir ? "block" : "none";
-
-    if (isDir) {
-        if (typeof loadTeachersList === 'function') await loadTeachersList();
-        if (typeof loadParentsList === 'function') await loadParentsList();
+    try {
+        logError("afterLogin démarré", null);
+        const user = await getCurrentUser();
+        if (!user) throw new Error("Utilisateur non trouvé");
+        await loadCenterInfo();
+        await loadDashboardStats();
+        await loadStudentsList();
+        const isDir = await isDirector();
+        const directorSection = document.getElementById("director-section");
+        if (directorSection) directorSection.style.display = isDir ? "block" : "none";
+        if (isDir) {
+            if (typeof loadTeachersList === 'function') await loadTeachersList();
+            if (typeof loadParentsList === 'function') await loadParentsList();
+        }
+        toggleView('dashboard');
+        logError("afterLogin terminé avec succès", null);
+    } catch (e) {
+        logError("afterLogin error", e.message);
+        showAlert("Erreur chargement dashboard: " + e.message, "error");
     }
-
-    toggleView('dashboard');
-    alert("afterLogin terminé");
 }
