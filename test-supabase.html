@@ -1,18 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Minimal test</title>
+    <meta charset="UTF-8">
+    <title>Test Supabase robuste</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h1>Test</h1>
-    <button id="btn">Cliquez</button>
-    <p id="out"></p>
+    <h1>Test Supabase</h1>
+    <button id="loginBtn">Connexion</button>
+    <pre id="log" style="background:#eee; padding:10px;"></pre>
+
     <script>
-        document.getElementById('btn').onclick = function() {
-            document.getElementById('out').innerHTML = 'Cliqué !';
-            alert('Cliqué !');
+        const logDiv = document.getElementById('log');
+        function addLog(msg) {
+            const p = document.createElement('div');
+            p.textContent = new Date().toLocaleTimeString() + ' : ' + msg;
+            logDiv.appendChild(p);
+        }
+
+        addLog('Début du script');
+        const SUPABASE_URL = "https://ecwlqiuvgmikglnfybon.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_ROrM2kw2PBgsYr1xq7Oi4w_pThtprFF";
+        addLog('URL et clé définies');
+        
+        let supabase;
+        try {
+            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            addLog('Client Supabase créé avec succès');
+        } catch(e) {
+            addLog('ERREUR création client : ' + e.message);
+        }
+
+        document.getElementById('loginBtn').onclick = async function() {
+            addLog('Clic sur le bouton');
+            const email = prompt("Email:");
+            if (!email) { addLog('Email annulé'); return; }
+            const password = prompt("Mot de passe:");
+            if (!password) { addLog('Mot de passe annulé'); return; }
+            addLog('Tentative de connexion pour ' + email);
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    addLog('Erreur : ' + error.message);
+                } else {
+                    addLog('SUCCÈS : ' + data.user.email);
+                }
+            } catch(err) {
+                addLog('Exception : ' + err.message);
+            }
         };
-        alert('Page chargée');
+        addLog('Script prêt, en attente du clic');
     </script>
 </body>
 </html>
