@@ -1,33 +1,30 @@
-alert("app.js chargé");
 document.addEventListener('DOMContentLoaded', () => {
-    // Écouteurs
-    document.getElementById('login-btn').addEventListener('click', login);
-    document.getElementById('register-btn').addEventListener('click', register);
-    document.getElementById('logout-btn').addEventListener('click', logout);
-    document.getElementById('add-student-btn').addEventListener('click', addStudent);
+    alert("app.js chargé - DOM prêt");
 
-    // Initialisation des modals
-    if (typeof initEditModal === 'function') initEditModal();
-    if (typeof initTeacherModal === 'function') initTeacherModal();
-    if (typeof initParentModal === 'function') initParentModal();
-    if (typeof initTeacherForm === 'function') initTeacherForm();
-    if (typeof initParentForm === 'function') initParentForm();
+    const loginBtn = document.getElementById('login-btn');
+    const registerBtn = document.getElementById('register-btn');
+    const logoutBtn = document.getElementById('logout-btn');
 
-    // Vérifier session existante
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-            afterLogin();
-        } else {
-            toggleView('login');
-        }
-    });
+    if (loginBtn) {
+        loginBtn.onclick = () => {
+            alert("Clic sur le bouton Connexion détecté !");
+            window.login(); // appelle la fonction globale
+        };
+    } else {
+        alert("Bouton login non trouvé ! Vérifiez l'ID dans index.html");
+    }
 
-    // Écouter les changements d'état de connexion
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-            afterLogin();
-        } else if (event === 'SIGNED_OUT') {
-            toggleView('login');
-        }
-    });
+    if (registerBtn) {
+        registerBtn.onclick = () => {
+            alert("Clic inscription");
+            window.register();
+        };
+    }
+
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            alert("Clic déconnexion");
+            window.logout();
+        };
+    }
 });
