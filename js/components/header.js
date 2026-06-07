@@ -1,44 +1,29 @@
-// Header.js
-
 export class Header {
-
     constructor(centerName = 'Dar El-Oustad', userEmail = '') {
         this.centerName = centerName;
         this.userEmail = userEmail;
     }
 
     render() {
-
-        const header = document.createElement('div');
-
-        header.className = 'header-content';
-
+        const header = document.createElement('header');
         header.innerHTML = `
-            <div class="header-title">
-                ${this.centerName}
+            <div style="font-weight: 700; font-size: 1.1rem; color: #0f172a;">
+                🏢 ${this.escape(this.centerName)}
             </div>
-
-            <div class="header-center-info">
-                ${this.userEmail}
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <span style="font-size: 0.9rem; color: #64748b; font-weight: 500;">👤 ${this.escape(this.userEmail)}</span>
+                <button id="logout-header-btn" class="btn btn-sm btn-danger">Déconnexion</button>
             </div>
-
-            <button
-                id="logout-header-btn"
-                class="btn btn-sm">
-                Déconnexion
-            </button>
         `;
 
-        const logoutBtn =
-            header.querySelector('#logout-header-btn');
-
-        logoutBtn.addEventListener('click', () => {
-
-            if (typeof window.logout === 'function') {
-                window.logout();
-            }
+        header.querySelector('#logout-header-btn').addEventListener('click', () => {
+            if (typeof window.logout === 'function') window.logout();
         });
 
         return header;
+    }
+
+    escape(str) {
+        return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
 }
