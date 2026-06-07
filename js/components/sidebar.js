@@ -1,6 +1,11 @@
+// Sidebar.js
+
 export class Sidebar {
-    constructor(role) {
+
+    constructor(role = 'director') {
+
         this.role = role;
+
         this.menus = [
             { view: 'dashboard', label: 'Tableau de bord', icon: '📊', allowed: ['director', 'teacher'] },
             { view: 'students', label: 'Étudiants', icon: '👩‍🎓', allowed: ['director', 'teacher'] },
@@ -16,16 +21,34 @@ export class Sidebar {
     }
 
     render() {
-        const filtered = this.menus.filter(m => m.allowed.includes(this.role));
+
+        const nav = document.createElement('nav');
+        nav.className = 'sidebar';
+
         const ul = document.createElement('ul');
         ul.className = 'sidebar-menu';
-        filtered.forEach(menu => {
+
+        const filteredMenus = this.menus.filter(
+            menu => menu.allowed.includes(this.role)
+        );
+
+        filteredMenus.forEach(menu => {
+
             const li = document.createElement('li');
+
             li.className = 'nav-item';
             li.dataset.view = menu.view;
-            li.innerHTML = `<span class="menu-icon">${menu.icon}</span> <span class="menu-label">${menu.label}</span>`;
+
+            li.innerHTML = `
+                <span class="menu-icon">${menu.icon}</span>
+                <span class="menu-label">${menu.label}</span>
+            `;
+
             ul.appendChild(li);
         });
-        return ul;
+
+        nav.appendChild(ul);
+
+        return nav;
     }
 }
