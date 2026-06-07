@@ -1,239 +1,163 @@
-// Module Gestion des groupes/classes
-window.renderGroups = async function() {
-    const container = document.getElementById('content-container');
-    const state = window.getAppState();
-    if (!state) return;
-    
+// Module Groupes
+export async function renderGroups(container) {
+    const state = window.appState;
     const isDirector = state.role === 'director';
-    
     container.innerHTML = `
         <div class="card">
             <h2>Gestion des groupes</h2>
             ${isDirector ? `
                 <form id="group-form" class="form-row">
-                    <input type="text" id="group-name" placeholder="Nom du groupe (ex: 3ème Maths)" required>
+                    <input type="text" id="group-name" placeholder="Nom du groupe" required>
                     <input type="text" id="group-desc" placeholder="Description">
-                    <select id="group-teacher">
-                        <option value="">Sélectionner un enseignant</option>
-                    </select>
+                    <select id="group-teacher"></select>
                     <button type="submit" class="btn">Ajouter</button>
                 </form>
             ` : '<p>Mode consultation uniquement</p>'}
         </div>
         <div class="card">
             <h3>Liste des groupes</h3>
-            <div id="groups-list-container"></div>
+            <div id="groups-list"></div>
         </div>
     `;
-    
-    // Charger la liste des enseignants pour le select (si directeur)
     if (isDirector) {
-        await loadTeachersForSelect();
+        await loadTeachersSelect(container);
     }
-    await loadGroupsList(isDirector);
-    
+    await loadGroupsList(container, isDirector);
     if (isDirector) {
-        document.getElementById('group-form').addEventListener('submit', async (e) => {
+        const form = container.querySelector('#group-form');
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            await addGroup();
-            await loadGroupsList(true);
-            document.getElementById('group-name').value = '';
-            document.getElementById('group-desc').value = '';
-            document.getElementById('group-teacher').value = '';
+            await addGroup(container);
+            await loadGroupsList(container, true);
+            form.reset();
         });
     }
-};
+}
 
-async function loadTeachersForSelect() {
-    const state = window.getAppState();
-    if (!state) return;
-    const { data: teachers, error } = await supabaseClient
+async function loadTeachersSelect(container) {
+    const state = window.appState;
+    const { data: teachers } = await window.supabaseClient
         .from('teachers')
         .select('id, full_name')
         .eq('centre_id', state.centreId);
-    if (error) return;
-    const select = document.getElementById('group-teacher');
-    if (!select) return;
-    teachers.forEach(teacher => {
+    const select = container.querySelector('#group-teacher');
+    select.innerHTML = '<option value="">Sélectionner un enseignant</option>';
+    teachers.forEach(t => {
         const option = document.createElement('option');
-        option.value = teacher.id;
-        option.textContent = teacher.full_name;
+        option.value = t.id;
+        option.textContent = t.full_name;
         select.appendChild(option);
     });
 }
 
-async function loadGroupsList(isDirector) {
-    const container = document.getElementById('groups-list-container');
-    if (!container) return;
-    container.innerHTML = '<div class="loader">Chargement...</div>';
-    const state = window.getAppState();
-    if (!state || !state.centreId) return;
-    
-    const { data: groups, error } = await supabaseClient
+async function loadGroupsList(container, isDirector) {
+    const listDiv = container.querySelector('#groups-list');
+    if (!listDiv) return;
+    listDiv.innerHTML = '<div class="loader">Chargement...</div>';
+    const state = window.appState;
+    const { data: groups, error } = await window.supabaseClient
         .from('groups')
-        .select(`
-            *,
-            teachers:teacher_id (full_name)
-        `)
+        .select(`*, teachers:teacher_id (full_name)`)
         .eq('centre_id', state.centreId)
         .order('created_at', { ascending: false });
-    
     if (error) {
-        container.innerHTML = `<div class="error">Erreur : ${error.message}</div>`;
+        listDiv.innerHTML = `<div class="error">Erreur : ${error.message}</div>`;
         return;
     }
-    
     if (groups.length === 0) {
-        container.innerHTML = '<p>Aucun groupe.</p>';
+        listDiv.innerHTML = '<p>Aucun groupe.</p>';
         return;
     }
-    
-    let html = `
-        <table class="data-table">
-            <thead>
-                <tr><th>Nom</th><th>Description</th><th>Enseignant</th>${isDirector ? '<th>Actions</th>' : ''} </thead>
-            <tbody>
-    `;
+    let html = `<table class="data-table"><thead><tr><th>Nom</th><th>Description</th><th>Enseignant</th>${isDirector ? '<th>Actions</th>' : ''}</tr></thead><tbody>`;
     groups.forEach(g => {
-        html += `
-            <tr>
-                <td>${escapeHtml(g.name)}</td>
-                <td>${escapeHtml(g.description || '-')}</td>
-                <td>${g.teachers ? escapeHtml(g.teachers.full_name) : 'Non assigné'}</td>
-                ${isDirector ? `
-                    <td>
-                        <button class="btn-edit-group btn-sm" data-id="${g.id}" data-name="${escapeHtml(g.name)}" data-desc="${escapeHtml(g.description || '')}" data-teacher="${g.teacher_id || ''}">Modifier</button>
-                        <button class="btn-delete-group btn-sm btn-danger" data-id="${g.id}">Supprimer</button>
-                    </td>
-                ` : ''}
-            </table>
-        `;
+        const teacherName = g.teachers ? g.teachers.full_name : 'Non assigné';
+        html += `<tr>
+            <td>${escapeHtml(g.name)}</td>
+            <td>${escapeHtml(g.description || '-')}</td>
+            <td>${escapeHtml(teacherName)}</td>
+            ${isDirector ? `<td><button class="btn-edit" data-id="${g.id}" data-name="${escapeHtml(g.name)}" data-desc="${escapeHtml(g.description||'')}" data-teacher="${g.teacher_id||''}">Modifier</button> <button class="btn-delete" data-id="${g.id}">Supprimer</button></td>` : ''}
+        </tr>`;
     });
-    html += `</tbody><tr>`;
-    container.innerHTML = html;
-    
+    html += `</tbody></table>`;
+    listDiv.innerHTML = html;
     if (isDirector) {
-        document.querySelectorAll('.btn-edit-group').forEach(btn => {
-            btn.addEventListener('click', () => {
-                openEditGroupModal(btn.dataset.id, btn.dataset.name, btn.dataset.desc, btn.dataset.teacher);
-            });
-        });
-        document.querySelectorAll('.btn-delete-group').forEach(btn => {
-            btn.addEventListener('click', () => deleteGroup(btn.dataset.id));
-        });
+        listDiv.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', () => deleteGroup(btn.dataset.id, container)));
+        listDiv.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', () => openEditGroupModal(btn.dataset, container)));
     }
 }
 
-async function addGroup() {
-    const state = window.getAppState();
-    if (!state || state.role !== 'director') {
-        alert("Seul le directeur peut ajouter des groupes");
-        return;
-    }
-    const name = document.getElementById('group-name').value.trim();
-    if (!name) {
-        alert("Nom du groupe requis");
-        return;
-    }
-    const description = document.getElementById('group-desc').value;
-    const teacher_id = document.getElementById('group-teacher').value || null;
-    
-    const { error } = await supabaseClient
-        .from('groups')
-        .insert([{
-            centre_id: state.centreId,
-            name,
-            description,
-            teacher_id,
-            created_by: state.user.id
-        }]);
-    if (error) {
-        alert("Erreur : " + error.message);
-    }
+async function addGroup(container) {
+    const state = window.appState;
+    const name = container.querySelector('#group-name').value.trim();
+    if (!name) return alert("Nom requis");
+    const description = container.querySelector('#group-desc').value;
+    const teacher_id = container.querySelector('#group-teacher').value || null;
+    const { error } = await window.supabaseClient.from('groups').insert([{
+        centre_id: state.centreId,
+        name, description, teacher_id,
+        created_by: state.user.id
+    }]);
+    if (error) alert("Erreur : " + error.message);
 }
 
-async function deleteGroup(id) {
+async function deleteGroup(id, container) {
     if (!confirm("Supprimer définitivement ce groupe ?")) return;
-    const { error } = await supabaseClient.from('groups').delete().eq('id', id);
-    if (error) {
-        alert("Erreur : " + error.message);
-        return;
-    }
-    await loadGroupsList(true);
+    const { error } = await window.supabaseClient.from('groups').delete().eq('id', id);
+    if (error) alert("Erreur : " + error.message);
+    else await loadGroupsList(container, true);
 }
 
-function openEditGroupModal(id, name, description, teacherId) {
+function openEditGroupModal(data, container) {
     const modalHtml = `
         <div id="edit-group-modal" class="modal">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>
                 <h3>Modifier le groupe</h3>
-                <input type="hidden" id="edit-group-id" value="${id}">
-                <div class="form-group"><label>Nom</label><input type="text" id="edit-group-name" value="${escapeHtml(name)}"></div>
-                <div class="form-group"><label>Description</label><input type="text" id="edit-group-desc" value="${escapeHtml(description)}"></div>
-                <div class="form-group">
-                    <label>Enseignant</label>
-                    <select id="edit-group-teacher"></select>
-                </div>
-                <button id="save-edit-group" class="btn">Enregistrer</button>
+                <input type="hidden" id="edit-id" value="${data.id}">
+                <div class="form-group"><label>Nom</label><input type="text" id="edit-name" value="${escapeHtml(data.name)}"></div>
+                <div class="form-group"><label>Description</label><input type="text" id="edit-desc" value="${escapeHtml(data.desc)}"></div>
+                <div class="form-group"><label>Enseignant</label><select id="edit-teacher"></select></div>
+                <button id="save-edit" class="btn">Enregistrer</button>
             </div>
         </div>
     `;
-    const existing = document.getElementById('edit-group-modal');
-    if (existing) existing.remove();
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     const modal = document.getElementById('edit-group-modal');
     modal.style.display = 'flex';
-    
-    // Remplir le select avec les enseignants
+    // Charger la liste des enseignants dans le select
     (async () => {
-        const state = window.getAppState();
-        const { data: teachers } = await supabaseClient
+        const state = window.appState;
+        const { data: teachers } = await window.supabaseClient
             .from('teachers')
             .select('id, full_name')
             .eq('centre_id', state.centreId);
-        const select = document.getElementById('edit-group-teacher');
+        const select = document.getElementById('edit-teacher');
         select.innerHTML = '<option value="">Aucun</option>';
         teachers.forEach(t => {
             const opt = document.createElement('option');
             opt.value = t.id;
             opt.textContent = t.full_name;
-            if (t.id === teacherId) opt.selected = true;
+            if (t.id === data.teacher) opt.selected = true;
             select.appendChild(opt);
         });
     })();
-    
-    document.getElementById('save-edit-group').onclick = async () => {
-        await updateGroup();
-        modal.remove();
-        await loadGroupsList(true);
+    modal.querySelector('.close-modal').onclick = () => modal.remove();
+    document.getElementById('save-edit').onclick = async () => {
+        const id = document.getElementById('edit-id').value;
+        const name = document.getElementById('edit-name').value.trim();
+        const description = document.getElementById('edit-desc').value;
+        const teacher_id = document.getElementById('edit-teacher').value || null;
+        if (!name) return alert("Nom requis");
+        const { error } = await window.supabaseClient.from('groups').update({ name, description, teacher_id }).eq('id', id);
+        if (error) alert("Erreur : " + error.message);
+        else {
+            modal.remove();
+            await loadGroupsList(container, true);
+        }
     };
-    document.querySelector('#edit-group-modal .close-modal').onclick = () => modal.remove();
-    window.onclick = (e) => { if (e.target === modal) modal.remove(); };
-}
-
-async function updateGroup() {
-    const id = document.getElementById('edit-group-id').value;
-    const name = document.getElementById('edit-group-name').value.trim();
-    const description = document.getElementById('edit-group-desc').value;
-    const teacher_id = document.getElementById('edit-group-teacher').value || null;
-    if (!name) {
-        alert("Nom requis");
-        return;
-    }
-    const { error } = await supabaseClient
-        .from('groups')
-        .update({ name, description, teacher_id })
-        .eq('id', id);
-    if (error) alert("Erreur : " + error.message);
 }
 
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
-        }
+    return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
+}
