@@ -1,67 +1,80 @@
-import { getAppState } from '../../core/state.js';
-import { escapeHtml, showAlert } from '../../utils/dom.js';
+import { ApiService } from '../services/api.js';
+import { escapeHtml, showAlert, withLoading } from '../utils/dom.js';
 
 export async function render(container) {
-    const state = getAppState();
-
     container.innerHTML = `
         <div class="card">
-            <h2>💰 Gestion de la Caisse & Facturation</h2>
+            <h2>💰 Encaissements & Facturation</h2>
             <form id="payment-form" class="form-row">
-                <select id="p-student" required><option value="">-- Sélectionner l'élève --</option></select>
-                <input type="number" id="p-amount" placeholder="Montant perçu (DH)" required>
+                <select id="p-student" required><option value="">-- Étudiant --</option></select>
+                <input type="number" id="p-amount" placeholder="Montant (DH)" required>
                 <select id="p-method">
                     <option value="cash">Espèces</option>
                     <option value="transfer">Virement</option>
+                    <option value="card">Carte bancaire</option>
                 </select>
-                <button type="submit" class="btn">Saisir l'écriture</button>
+                <button type="submit" class="btn">Enregistrer le paiement</button>
             </form>
         </div>
         <div class="card">
-            <h3>Journal des Recettes</h3>
+            <h3>Historique des transactions</h3>
             <div id="payments-history-wrapper"></div>
         </div>
     `;
 
-    const { data: students } = await window.supabaseClient.from('students').select('id, name').eq('centre_id', state.centreId);
-    const pSelect = document.getElementById('p-student');
-    if (students) students.forEach(s => pSelect.insertAdjacentHTML('beforeend', `<option value="${s.id}">${escapeHtml(s.name)}</option>`));
+    // Remplir la liste des étudiants
+    const students = await ApiService.fetchStudents();
+    const selectStudent = document.getElementById('p-student');
+    students.forEach(s => {
+        selectStudent.insertAdjacentHTML('beforeend', `<option value="${s.id}">${escapeHtml(s.name)}</option>`);
+    });
 
     await refreshHistory();
 
-    container.querySelector('#payment-form').addEventListener('submit', async (e) => {
+    const form = container.querySelector('#payment-form');
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const sid = pSelect.value;
-        const amt = parseFloat(document.getElementById('p-amount').value);
-
-        const { error } = await window.supabaseClient.from('payments').insert([{
-            centre_id: state.centreId,
-            student_id: sid,
-            amount: amt,
-            payment_date: new Date().toISOString().slice(0,10),
-            payment_method: document.getElementById('p-method').value,
-            created_by: state.user.id
-        }]);
-
-        if (error) showAlert(error.message, 'error');
-        else { showAlert('Paiement encaissé', 'success'); e.target.reset(); refreshHistory(); }
+        const btn = form.querySelector('button');
+        await withLoading(btn, async () => {
+            await ApiService.createPayment({
+                student_id: parseInt(selectStudent.value),
+                amount: parseFloat(document.getElementById('p-amount').value),
+                payment_date: new Date().toISOString().slice(0,10),
+                payment_method: document.getElementById('p-method').value
+            });
+            showAlert('Paiement enregistré', 'success');
+            form.reset();
+            await refreshHistory();
+        });
     });
 }
 
 async function refreshHistory() {
     const wrapper = document.getElementById('payments-history-wrapper');
-    const { data, error } = await window.supabaseClient.from('payments').select('amount, payment_method, students(name)').eq('centre_id', getAppState().centreId);
-
-    if (error || !data.length) { wrapper.innerHTML = 'Aucun mouvement de fonds.'; return; }
-
-    wrapper.innerHTML = `
-        <div class="data-table-container">
-            <table class="data-table">
-                <thead><tr><th>Élève</th><th>Versement</th><th>Mode</th></tr></thead>
-                <tbody>
-                    ${data.map(p => `<tr><td>${escapeHtml(p.students?.name || 'Inconnu')}</td><td>${p.amount} DH</td><td>${p.payment_method}</td></tr>`).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+    try {
+        const payments = await ApiService.fetchPayments();
+        if (!payments.length) {
+            wrapper.innerHTML = '<p>Aucun paiement enregistré.</p>';
+            return;
+        }
+        wrapper.innerHTML = `
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead><tr><th>Élève</th><th>Montant</th><th>Mode</th><th>Date</th></tr></thead>
+                    <tbody>
+                        ${payments.map(p => `
+                            <tr>
+                                <td>${escapeHtml(p.students?.name || 'Inconnu')}</td>
+                                <td>${p.amount} DH</td>
+                                <td>${p.payment_method === 'cash' ? 'Espèces' : p.payment_method === 'transfer' ? 'Virement' : 'Carte'}</td>
+                                <td>${p.payment_date}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (err) {
+        wrapper.innerHTML = `<p class="alert-error">Erreur : ${err.message}</p>`;
+    }
 }
