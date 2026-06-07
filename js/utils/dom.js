@@ -1,54 +1,11 @@
-// utils.js
+export function escapeHtml(str = '') {
+    return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
 
 export function showAlert(message, type = 'error') {
-
-    const existingAlert =
-        document.querySelector('.alert');
-
-    if (existingAlert) {
-        existingAlert.remove();
-    }
-
-    const alertDiv =
-        document.createElement('div');
-
-    alertDiv.className =
-        `alert alert-${type}`;
-
-    alertDiv.textContent = message;
-
-    document.body.appendChild(alertDiv);
-
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 4000);
-}
-
-export function showLoading(containerId, show = true) {
-
-    const container =
-        document.getElementById(containerId);
-
-    if (!container) return;
-
-    if (show) {
-
-        container.innerHTML = `
-            <div class="loader">
-                Chargement...
-            </div>
-        `;
-
-    } else {
-
-        container.innerHTML = '';
-    }
-}
-
-export function escapeHtml(str = '') {
-
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    const toast = document.createElement('div');
+    toast.className = `alert-toast alert-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
 }
