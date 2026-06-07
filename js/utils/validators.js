@@ -1,12 +1,24 @@
-function validateEmail(email) {
-    const re = /\S+@\S+\.\S+/;
+// validators.js
+
+export function validateEmail(email) {
+
+    if (!email) return false;
+
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     return re.test(email);
 }
 
-function validatePayment(amount) {
-    return !isNaN(amount) && amount >= 0;
+export function validatePayment(amount) {
+
+    const value = Number(amount);
+
+    return !isNaN(value) && value >= 0;
 }
 
-function validateStudentName(name) {
+export function validateStudentName(name) {
+
+    if (!name) return false;
+
     return name.trim().length >= 2;
 }
