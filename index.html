@@ -2,165 +2,24 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Dar El-Oustad Pro</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
-        #app { display: flex; min-height: 100vh; }
-        .sidebar { width: 260px; background: #2c3e50; color: white; transition: width 0.3s; }
-        .sidebar-brand { padding: 20px; font-size: 1.4rem; text-align: center; border-bottom: 1px solid #3e5a6b; }
-        .sidebar-menu { list-style: none; padding: 0; }
-        .sidebar-menu li { padding: 12px 20px; cursor: pointer; transition: background 0.2s; }
-        .sidebar-menu li:hover { background: #1a2a3a; }
-        .sidebar-menu li.active { background: #1abc9c; }
-        .main { flex: 1; display: flex; flex-direction: column; }
-        .header { background: white; padding: 12px 24px; display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; }
-        .content { padding: 24px; }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .btn { background: #2c7da0; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        .btn-danger { background: #e63946; }
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th, .data-table td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
-        .data-table th { background: #f8f9fa; }
-        .form-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-        .form-row input, .form-row select, .form-row button { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: white; padding: 24px; border-radius: 16px; width: 90%; max-width: 500px; position: relative; }
-        .close-modal { position: absolute; top: 12px; right: 16px; font-size: 24px; cursor: pointer; }
-        .hidden { display: none; }
-        .login-container { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 16px; }
-        .login-container input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; }
-        @media (max-width: 768px) { .sidebar { width: 70px; } .sidebar-brand span, .sidebar-menu li span { display: none; } .sidebar-menu li { text-align: center; } }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Utilitaires (optionnels) -->
-    <script src="js/utils/dom.js"></script>
-    <script src="js/utils/validators.js"></script>
 </head>
 <body>
     <div id="app"></div>
-    <script>
-        // Configuration Supabase (à adapter)
-        const SUPABASE_URL = "https://ecwlqiuvgmikglnfybon.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_ROrM2kw2PBgsYr1xq7Oi4w_pThtprFF";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabaseClient = supabaseClient;
 
-        // État global
-        let appState = { user: null, profile: null, centreId: null, role: null };
-        window.appState = appState;
-
-        // Fonction pour afficher le formulaire de connexion
-        function showLogin() {
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <div class="login-container">
-                    <h1>Dar El-Oustad Pro</h1>
-                    <input type="email" id="login-email" placeholder="Email">
-                    <input type="password" id="login-password" placeholder="Mot de passe">
-                    <button id="do-login" class="btn">Connexion</button>
-                    <button id="do-register" class="btn" style="background:#6c757d;">Créer un compte</button>
-                    <div id="login-error" style="color:red; margin-top:10px;"></div>
-                </div>
-            `;
-            document.getElementById('do-login').onclick = async () => {
-                const email = document.getElementById('login-email').value;
-                const pwd = document.getElementById('login-password').value;
-                const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
-                if (error) document.getElementById('login-error').innerText = error.message;
-                else await afterLogin();
-            };
-            document.getElementById('do-register').onclick = async () => {
-                const email = document.getElementById('login-email').value;
-                const pwd = document.getElementById('login-password').value;
-                const { error } = await supabaseClient.auth.signUp({ email, password: pwd });
-                if (error) alert("Erreur: " + error.message);
-                else alert("Compte créé ! Vérifiez votre email.");
-            };
-        }
-
-        // Après connexion : charger le layout et les modules
-        async function afterLogin() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (!user) return;
-            const { data: profile, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-            if (error || !profile) {
-                alert("Profil introuvable");
-                return;
-            }
-            Object.assign(appState, { user, profile, centreId: profile.centre_id, role: profile.role });
-
-            // Générer la sidebar
-            const isDirector = (profile.role === 'director');
-            const menus = [
-                { id: 'dashboard', label: 'Tableau de bord', icon: '📊', allowed: ['director','teacher'] },
-                { id: 'students', label: 'Étudiants', icon: '👩‍🎓', allowed: ['director','teacher'] },
-                { id: 'teachers', label: 'Enseignants', icon: '👨‍🏫', allowed: ['director'] },
-                { id: 'groups', label: 'Groupes', icon: '👥', allowed: ['director','teacher'] }
-            ];
-            const filtered = menus.filter(m => m.allowed.includes(profile.role));
-            const menuHtml = filtered.map(m => `<li data-view="${m.id}">${m.icon} <span>${m.label}</span></li>`).join('');
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <div class="sidebar">
-                    <div class="sidebar-brand">Dar El-Oustad</div>
-                    <ul class="sidebar-menu">${menuHtml}</ul>
-                </div>
-                <div class="main">
-                    <div class="header">
-                        <div>${profile.centre_id?.substring(0,8) || 'Centre'}</div>
-                        <button id="logout-btn" class="btn">Déconnexion</button>
-                    </div>
-                    <div class="content" id="content"></div>
-                </div>
-            `;
-            document.getElementById('logout-btn').onclick = async () => {
-                await supabaseClient.auth.signOut();
-                showLogin();
-            };
-
-            // Navigation : charger dynamiquement les modules
-            const loadModule = async (viewName) => {
-                const content = document.getElementById('content');
-                if (viewName === 'dashboard') {
-                    content.innerHTML = '<div class="card">Chargement...</div>';
-                    const module = await import('./js/modules/dashboard/dashboard.js');
-                    module.renderDashboard(content);
-                } else if (viewName === 'students') {
-                    content.innerHTML = '<div class="card">Chargement...</div>';
-                    const module = await import('./js/modules/students/students.js');
-                    module.renderStudents(content);
-                } else if (viewName === 'teachers') {
-                    content.innerHTML = '<div class="card">Chargement...</div>';
-                    const module = await import('./js/modules/teachers/teachers.js');
-                    module.renderTeachers(content);
-                } else if (viewName === 'groups') {
-                    content.innerHTML = '<div class="card">Chargement...</div>';
-                    const module = await import('./js/modules/groups/groups.js');
-                    module.renderGroups(content);
-                }
-            };
-
-            document.querySelectorAll('.sidebar-menu li').forEach(li => {
-                li.onclick = () => {
-                    const view = li.dataset.view;
-                    loadModule(view);
-                };
-            });
-            // Charger le dashboard par défaut
-            loadModule('dashboard');
-        }
-
-        // Vérifier la session au démarrage
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) afterLogin();
-            else showLogin();
-        });
-    </script>
+    <!-- Scripts de l'application (ordre important) -->
+    <script src="js/config/supabase.js"></script>
+    <script src="js/config/app-config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/core/auth.js"></script>
+    <script src="js/core/router.js"></script>
+    <script src="js/core/layout.js"></script>
+    <script src="js/components/Sidebar.js"></script>
+    <script src="js/components/Header.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
