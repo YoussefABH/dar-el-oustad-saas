@@ -1,11 +1,6 @@
-// Sidebar.js
-
 export class Sidebar {
-
     constructor(role = 'director') {
-
         this.role = role;
-
         this.menus = [
             { view: 'dashboard', label: 'Tableau de bord', icon: '📊', allowed: ['director', 'teacher'] },
             { view: 'students', label: 'Étudiants', icon: '👩‍🎓', allowed: ['director', 'teacher'] },
@@ -13,42 +8,29 @@ export class Sidebar {
             { view: 'groups', label: 'Groupes', icon: '👥', allowed: ['director', 'teacher'] },
             { view: 'attendance', label: 'Présences', icon: '📝', allowed: ['director', 'teacher'] },
             { view: 'payments', label: 'Paiements', icon: '💰', allowed: ['director'] },
-            { view: 'expenses', label: 'Dépenses', icon: '📉', allowed: ['director'] },
-            { view: 'courses', label: 'Cours', icon: '📚', allowed: ['director', 'teacher'] },
-            { view: 'reports', label: 'Rapports', icon: '📈', allowed: ['director'] },
             { view: 'settings', label: 'Paramètres', icon: '⚙️', allowed: ['director'] }
         ];
     }
 
     render() {
+        const aside = document.createElement('aside');
+        aside.className = 'sidebar';
 
-        const nav = document.createElement('nav');
-        nav.className = 'sidebar';
+        aside.innerHTML = `
+            <div class="sidebar-brand">Dar El-Oustad Pro</div>
+            <ul class="sidebar-menu"></ul>
+        `;
 
-        const ul = document.createElement('ul');
-        ul.className = 'sidebar-menu';
+        const menuList = aside.querySelector('.sidebar-menu');
 
-        const filteredMenus = this.menus.filter(
-            menu => menu.allowed.includes(this.role)
-        );
-
-        filteredMenus.forEach(menu => {
-
+        this.menus.filter(m => m.allowed.includes(this.role)).forEach(menu => {
             const li = document.createElement('li');
-
             li.className = 'nav-item';
             li.dataset.view = menu.view;
-
-            li.innerHTML = `
-                <span class="menu-icon">${menu.icon}</span>
-                <span class="menu-label">${menu.label}</span>
-            `;
-
-            ul.appendChild(li);
+            li.innerHTML = `<span>${menu.icon}</span> <span>${menu.label}</span>`;
+            menuList.appendChild(li);
         });
 
-        nav.appendChild(ul);
-
-        return nav;
+        return aside;
     }
 }
