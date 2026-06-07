@@ -1,4 +1,8 @@
-// Configuration par défaut du centre (sera fusionnée avec les données de la table settings plus tard)
+// app-config.js
+
+import { supabaseClient } from './supabase.js';
+
+// Configuration par défaut
 export const defaultAppConfig = {
     establishment: {
         name: "Dar El-Oustad",
@@ -6,6 +10,7 @@ export const defaultAppConfig = {
         logo: "/assets/logo-default.png",
         favicon: "/assets/favicon-default.png"
     },
+
     legal: {
         ice: "",
         rc: "",
@@ -14,12 +19,14 @@ export const defaultAppConfig = {
         city: "",
         country: "Maroc"
     },
+
     contact: {
         phone: "",
         email: "contact@dar-el-oustad.ma",
         website: "",
         address: ""
     },
+
     preferences: {
         currency: "DH",
         language: "fr",
@@ -27,36 +34,85 @@ export const defaultAppConfig = {
     }
 };
 
-// Fonction pour charger la configuration du centre depuis la table settings (à appeler après login)
-let currentConfig = { ...defaultAppConfig };
+// Configuration courante
+let currentConfig = structuredClone(defaultAppConfig);
 
+// Charger la configuration depuis Supabase
 export async function loadCenterConfig(centreId) {
-    if (!centreId) return;
-    const { data, error } = await supabaseClient
-        .from('settings')
-        .select('*')
-        .eq('centre_id', centreId)
-        .single();
-    if (!error && data) {
-        // Fusionner avec la config par défaut
-        currentConfig = {
-            establishment: { ...defaultAppConfig.establishment, ...data.establishment },
-            legal: { ...defaultAppConfig.legal, ...data.legal },
-            contact: { ...defaultAppConfig.contact, ...data.contact },
-            preferences: { ...defaultAppConfig.preferences, ...data.preferences }
-        };
-        // Appliquer le favicon
-        if (currentConfig.establishment.favicon) {
-            const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-            link.type = 'image/png';
-            link.rel = 'shortcut icon';
-            link.href = currentConfig.establishment.favicon;
-            document.head.appendChild(link);
-        }
+
+    if (!centreId) {
+        return currentConfig;
     }
-    return currentConfig;
+
+    try {
+
+        const { data, error } = await supabaseClient
+            .from('settings')
+            .select('*')
+            .eq('centre_id', centreId)
+            .single();
+
+        if (error) {
+            console.warn('Configuration centre non trouvée :', error.message);
+            return currentConfig;
+        }
+
+        if (data) {
+
+            currentConfig = {
+                establishment: {
+                    ...defaultAppConfig.establishment,
+                    ...(data.establishment || {})
+                },
+
+                legal: {
+                    ...defaultAppConfig.legal,
+                    ...(data.legal || {})
+                },
+
+                contact: {
+                    ...defaultAppConfig.contact,
+                    ...(data.contact || {})
+                },
+
+                preferences: {
+                    ...defaultAppConfig.preferences,
+                    ...(data.preferences || {})
+                }
+            };
+
+            updateFavicon(
+                currentConfig.establishment.favicon
+            );
+        }
+
+        return currentConfig;
+
+    } catch (err) {
+
+        console.error('Erreur chargement configuration :', err);
+
+        return currentConfig;
+    }
 }
 
+// Mettre à jour le favicon
+function updateFavicon(faviconUrl) {
+
+    if (!faviconUrl) return;
+
+    let favicon = document.querySelector("link[rel='icon']");
+
+    if (!favicon) {
+        favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        document.head.appendChild(favicon);
+    }
+
+    favicon.href = faviconUrl;
+}
+
+// Retourner la configuration actuelle
 export function getAppConfig() {
     return currentConfig;
 }
