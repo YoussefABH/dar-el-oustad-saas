@@ -1,9 +1,8 @@
 export class Sidebar {
     constructor(role) {
         this.role = role;
-        // Définition des menus en fonction du rôle
         this.menus = [
-            { view: 'dashboard', label: 'Dashboard', icon: '📊', allowed: ['director', 'teacher'] },
+            { view: 'dashboard', label: 'Tableau de bord', icon: '📊', allowed: ['director', 'teacher'] },
             { view: 'students', label: 'Étudiants', icon: '👩‍🎓', allowed: ['director', 'teacher'] },
             { view: 'teachers', label: 'Enseignants', icon: '👨‍🏫', allowed: ['director'] },
             { view: 'groups', label: 'Groupes', icon: '👥', allowed: ['director', 'teacher'] },
@@ -29,4 +28,4 @@ export class Sidebar {
         });
         return ul;
     }
-    }
+}
