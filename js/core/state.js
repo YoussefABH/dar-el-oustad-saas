@@ -6,6 +6,22 @@ let appState = {
     config: null
 };
 
-export function setAppState(newState) { appState = { ...appState, ...newState }; window.appState = appState; }
-export function getAppState() { return appState; }
-export function isDirector() { return appState.role === 'director'; }
+const stateEmitter = new EventTarget();
+
+export function setAppState(newState) {
+    appState = { ...appState, ...newState };
+    window.appState = appState; // debug
+    stateEmitter.dispatchEvent(new CustomEvent('stateChange', { detail: { state: appState } }));
+}
+
+export function getAppState() {
+    return appState;
+}
+
+export function onStateChange(callback) {
+    stateEmitter.addEventListener('stateChange', (e) => callback(e.detail.state));
+}
+
+export function isDirector() {
+    return appState.role === 'director';
+}
