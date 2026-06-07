@@ -1,3 +1,5 @@
+import { getAppState } from '../core/state.js';
+
 export class Header {
     constructor(centerName = 'Dar El-Oustad', userEmail = '') {
         this.centerName = centerName;
@@ -16,8 +18,10 @@ export class Header {
             </div>
         `;
 
-        header.querySelector('#logout-header-btn').addEventListener('click', () => {
-            if (typeof window.logout === 'function') window.logout();
+        header.querySelector('#logout-header-btn').addEventListener('click', async () => {
+            const { supabaseClient } = await import('../config/supabase.js');
+            await supabaseClient.auth.signOut();
+            window.location.reload();
         });
 
         return header;
