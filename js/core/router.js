@@ -1,5 +1,3 @@
-// router.js
-
 const routes = {
     dashboard: '../modules/dashboard/dashboard.js',
     students: '../modules/students/students.js',
@@ -7,60 +5,29 @@ const routes = {
     groups: '../modules/groups/groups.js',
     attendance: '../modules/attendance/attendance.js',
     payments: '../modules/payments/payments.js',
-    expenses: '../modules/expenses/expenses.js',
-    courses: '../modules/courses/courses.js',
-    reports: '../modules/reports/reports.js',
     settings: '../modules/settings/settings.js'
 };
 
-const loadedModules = {};
-
 export async function navigateTo(viewName) {
+    const container = document.getElementById('content-container');
+    if (!container) return;
+
+    container.innerHTML = `<div class="loader-global"><div class="spinner"></div></div>`;
 
     try {
-
-        if (!routes[viewName]) {
-            throw new Error(`Route inconnue : ${viewName}`);
-        }
-
-        if (!loadedModules[viewName]) {
-
-            const module = await import(routes[viewName]);
-
-            loadedModules[viewName] = module;
-        }
-
-        const module = loadedModules[viewName];
-
+        if (!routes[viewName]) throw new Error(`Route "${viewName}" inconnue.`);
+        const module = await import(routes[viewName]);
         if (typeof module.render === 'function') {
-
-            await module.render();
-
+            await module.render(container);
         } else {
-
-            console.error(
-                `Le module ${viewName} ne contient pas de fonction render()`
-            );
+            throw new Error(`Le module ${viewName} ne possède pas de méthode render().`);
         }
-
-    } catch (error) {
-
-        console.error(
-            `Erreur chargement module ${viewName}`,
-            error
-        );
-
-        const container =
-            document.getElementById('content-container');
-
-        if (container) {
-
-            container.innerHTML = `
-                <div class="card">
-                    <h2>Erreur</h2>
-                    <p>${error.message}</p>
-                </div>
-            `;
-        }
+    } catch (err) {
+        container.innerHTML = `
+            <div class="card" style="border-left: 4px solid #ef4444;">
+                <h2 style="color: #ef4444;">Erreur d'aiguillage</h2>
+                <p>${err.message}</p>
+            </div>
+        `;
     }
 }
