@@ -1,5 +1,6 @@
-import { getAppState } from '../../core/state.js';
-import { escapeHtml, showAlert } from '../../utils/dom.js';
+import { ApiService } from '../services/api.js';
+import { getAppState } from '../core/state.js';
+import { escapeHtml, showAlert, withLoading } from '../utils/dom.js';
 
 export async function render(container) {
     const state = getAppState();
@@ -7,9 +8,9 @@ export async function render(container) {
 
     container.innerHTML = `
         <div class="card">
-            <h2>📝 Feuille de Présence Électronique</h2>
+            <h2>📋 Feuille de présence</h2>
             <div class="form-row">
-                <select id="at-group"><option value="">-- Sélectionner Groupe --</option></select>
+                <select id="at-group"><option value="">-- Choisir un groupe --</option></select>
                 <input type="date" id="at-date" value="${today}">
                 <button id="at-load" class="btn">Ouvrir le registre</button>
             </div>
@@ -17,36 +18,42 @@ export async function render(container) {
         <div id="attendance-sheet"></div>
     `;
 
-    const { data: groups } = await window.supabaseClient.from('groups').select('id, name').eq('centre_id', state.centreId);
+    // Charger les groupes
+    const groups = await ApiService.fetchGroups();
     const select = document.getElementById('at-group');
-    if (groups) groups.forEach(g => select.insertAdjacentHTML('beforeend', `<option value="${g.id}">${escapeHtml(g.name)}</option>`));
+    groups.forEach(g => {
+        select.insertAdjacentHTML('beforeend', `<option value="${g.id}">${escapeHtml(g.name)}</option>`);
+    });
 
     document.getElementById('at-load').onclick = async () => {
-        const gid = select.value;
-        const d = document.getElementById('at-date').value;
-        if (!gid) return alert('Sélectionnez un groupe');
-        await loadAttendanceSheet(gid, d);
+        const groupId = select.value;
+        const date = document.getElementById('at-date').value;
+        if (!groupId) return showAlert('Veuillez sélectionner un groupe', 'error');
+        await loadAttendanceSheet(groupId, date);
     };
 }
 
 async function loadAttendanceSheet(groupId, date) {
     const target = document.getElementById('attendance-sheet');
     const state = getAppState();
-    
-    const { data: students } = await window.supabaseClient.from('students').select('id, name').eq('centre_id', state.centreId);
-    if (!students || !students.length) { target.innerHTML = '<div class="card">Aucun étudiant répertorié.</div>'; return; }
+
+    const students = await ApiService.fetchStudents();
+    if (!students.length) {
+        target.innerHTML = '<div class="card">Aucun étudiant inscrit dans ce centre.</div>';
+        return;
+    }
 
     target.innerHTML = `
         <div class="card">
-            <h3>Appel du jour</h3>
+            <h3>Appel du ${date}</h3>
             <table class="data-table">
-                <thead><tr><th>Nom Émargeant</th><th>Statut</th></tr></thead>
+                <thead><tr><th>Étudiant</th><th>Présence</th></thead>
                 <tbody id="attendance-rows">
                     ${students.map(s => `
                         <tr>
                             <td>${escapeHtml(s.name)}</td>
                             <td>
-                                <select data-sid="${s.id}" class="status-selector">
+                                <select data-student="${s.id}" class="status-selector">
                                     <option value="present">✅ Présent</option>
                                     <option value="absent">❌ Absent</option>
                                 </select>
@@ -55,22 +62,20 @@ async function loadAttendanceSheet(groupId, date) {
                     `).join('')}
                 </tbody>
             </table>
-            <button id="save-attendance" class="btn" style="margin-top:16px;">Verrouiller le registre</button>
+            <button id="save-attendance" class="btn" style="margin-top:16px;">Enregistrer les présences</button>
         </div>
     `;
 
     document.getElementById('save-attendance').onclick = async () => {
-        const rows = document.querySelectorAll('.status-selector');
-        for (let sel of rows) {
-            await window.supabaseClient.from('attendance').upsert({
-                centre_id: state.centreId,
-                student_id: sel.dataset.sid,
+        const selectors = document.querySelectorAll('.status-selector');
+        for (let sel of selectors) {
+            await ApiService.upsertAttendance({
+                student_id: parseInt(sel.dataset.student),
                 group_id: groupId,
                 date: date,
-                status: sel.value,
-                created_by: state.user.id
+                status: sel.value
             });
         }
-        showAlert('Registre sauvegardé', 'success');
+        showAlert('Présences sauvegardées', 'success');
     };
-}
+        }
