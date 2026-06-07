@@ -1,55 +1,64 @@
-import { getAppState } from '../../core/state.js';
-import { escapeHtml, showAlert } from '../../utils/dom.js';
+import { ApiService } from '../services/api.js';
+import { escapeHtml, showAlert, withLoading } from '../utils/dom.js';
 
 export async function render(container) {
-    const state = getAppState();
-
     container.innerHTML = `
         <div class="card">
-            <h2>Configuration des Groupes de cours</h2>
+            <h2>👥 Groupes & Classes</h2>
             <form id="group-form" class="form-row">
-                <input type="text" id="g-name" placeholder="Nom de la classe / groupe" required>
-                <input type="text" id="g-desc" placeholder="Détails (Optionnels)">
-                <button type="submit" class="btn">Créer</button>
+                <input type="text" id="g-name" placeholder="Nom du groupe (ex: BAC Sc Maths)" required>
+                <input type="text" id="g-desc" placeholder="Description (optionnelle)">
+                <button type="submit" class="btn">Créer le groupe</button>
             </form>
         </div>
         <div class="card">
-            <h3>Groupes Ouverts</h3>
+            <h3>Groupes actifs</h3>
             <div id="groups-list-wrapper"></div>
         </div>
     `;
 
     await refreshList();
 
-    container.querySelector('#group-form').addEventListener('submit', async (e) => {
+    const form = container.querySelector('#group-form');
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const { error } = await window.supabaseClient.from('groups').insert([{
-            centre_id: state.centreId,
-            name: document.getElementById('g-name').value.trim(),
-            description: document.getElementById('g-desc').value.trim(),
-            created_by: state.user.id
-        }]);
-
-        if (error) showAlert(error.message, 'error');
-        else { showAlert('Groupe actif crée', 'success'); e.target.reset(); refreshList(); }
+        const btn = form.querySelector('button');
+        await withLoading(btn, async () => {
+            await ApiService.createGroup({
+                name: document.getElementById('g-name').value.trim(),
+                description: document.getElementById('g-desc').value.trim() || null
+            });
+            showAlert('Groupe créé avec succès', 'success');
+            form.reset();
+            await refreshList();
+        });
     });
 }
 
 async function refreshList() {
     const wrapper = document.getElementById('groups-list-wrapper');
-    const { data, error } = await window.supabaseClient.from('groups').select('*').eq('centre_id', getAppState().centreId);
-
-    if (error) { wrapper.innerHTML = 'Erreur.'; return; }
-    if (!data.length) { wrapper.innerHTML = 'Aucun groupe structuré.'; return; }
-
-    wrapper.innerHTML = `
-        <div class="data-table-container">
-            <table class="data-table">
-                <thead><tr><th>Identifiant du Groupe</th><th>Description</th></tr></thead>
-                <tbody>
-                    ${data.map(g => `<tr><td><strong>${escapeHtml(g.name)}</strong></td><td>${escapeHtml(g.description || '-')}</td></tr>`).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+    try {
+        const groups = await ApiService.fetchGroups();
+        if (!groups.length) {
+            wrapper.innerHTML = '<p>Aucun groupe pour le moment.</p>';
+            return;
+        }
+        wrapper.innerHTML = `
+            <div class="data-table-container">
+                <table class="data-table">
+                    <thead><tr><th>Nom</th><th>Description</th></thead>
+                    <tbody>
+                        ${groups.map(g => `
+                            <tr>
+                                <td><strong>${escapeHtml(g.name)}</strong></td>
+                                <td>${escapeHtml(g.description || '-')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (err) {
+        wrapper.innerHTML = `<p class="alert-error">Erreur : ${err.message}</p>`;
+    }
 }
