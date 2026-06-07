@@ -20,11 +20,9 @@ export async function navigateTo(viewName) {
         console.error(`Route inconnue: ${viewName}`);
         return;
     }
-    // Charger le script du module si pas déjà fait
     if (!loadedModules[viewName]) {
         await loadModule(viewName);
     }
-    // Appeler la fonction render du module
     if (window[`render${capitalize(viewName)}`]) {
         window[`render${capitalize(viewName)}`]();
     } else {
@@ -36,10 +34,7 @@ function loadModule(viewName) {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = routes[viewName];
-        script.onload = () => {
-            loadedModules[viewName] = true;
-            resolve();
-        };
+        script.onload = () => { loadedModules[viewName] = true; resolve(); };
         script.onerror = reject;
         document.head.appendChild(script);
     });
