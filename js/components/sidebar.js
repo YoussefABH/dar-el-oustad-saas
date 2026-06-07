@@ -8,6 +8,8 @@ export class Sidebar {
             { view: 'groups', label: 'Groupes', icon: '👥', allowed: ['director', 'teacher'] },
             { view: 'attendance', label: 'Présences', icon: '📝', allowed: ['director', 'teacher'] },
             { view: 'payments', label: 'Paiements', icon: '💰', allowed: ['director'] },
+            { view: 'parents', label: 'Parents', icon: '👪', allowed: ['director'] },
+            { view: 'center', label: 'Mon Centre', icon: '🏢', allowed: ['director'] },
             { view: 'settings', label: 'Paramètres', icon: '⚙️', allowed: ['director'] }
         ];
     }
@@ -15,14 +17,11 @@ export class Sidebar {
     render() {
         const aside = document.createElement('aside');
         aside.className = 'sidebar';
-
         aside.innerHTML = `
             <div class="sidebar-brand">Dar El-Oustad Pro</div>
             <ul class="sidebar-menu"></ul>
         `;
-
         const menuList = aside.querySelector('.sidebar-menu');
-
         this.menus.filter(m => m.allowed.includes(this.role)).forEach(menu => {
             const li = document.createElement('li');
             li.className = 'nav-item';
@@ -30,7 +29,6 @@ export class Sidebar {
             li.innerHTML = `<span>${menu.icon}</span> <span>${menu.label}</span>`;
             menuList.appendChild(li);
         });
-
         return aside;
     }
 }
