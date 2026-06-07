@@ -4,27 +4,184 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dar El-Oustad Pro</title>
-
-    <!-- Police -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css">
-
-    <!-- Supabase -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fc; color: #1e2a3e; }
+        #app { display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: linear-gradient(180deg, #1e2a3e 0%, #0f1a24 100%); color: #e2e8f0; }
+        .sidebar-brand { padding: 24px 20px; font-size: 1.5rem; font-weight: 700; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-menu { list-style: none; padding: 16px 0; }
+        .sidebar-menu li { padding: 12px 24px; margin: 4px 12px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
+        .sidebar-menu li:hover { background: rgba(255,255,255,0.1); }
+        .main { flex: 1; display: flex; flex-direction: column; background: #f4f7fc; }
+        .header { background: white; padding: 12px 28px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+        .content { padding: 28px; }
+        .card { background: white; border-radius: 24px; padding: 24px; margin-bottom: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .btn { background: #2c7da0; color: white; border: none; padding: 8px 18px; border-radius: 40px; cursor: pointer; font-weight: 600; }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .form-row input, .form-row select { flex: 1; padding: 10px; border-radius: 40px; border: 1px solid #cbd5e1; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .login-container { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 24px; text-align: center; }
+        .login-container input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 40px; border: 1px solid #ccc; }
+        .login-container button { width: 100%; margin-top: 8px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 20px; margin-bottom: 28px; }
+        .kpi-card { background: white; border-radius: 24px; padding: 20px; display: flex; align-items: center; gap: 16px; }
+        .kpi-value { font-size: 1.8rem; font-weight: 700; }
+        .status-paid { background: #dcfce7; color: #15803d; padding: 4px 12px; border-radius: 30px; }
+        .status-pending { background: #fff3e3; color: #b45309; padding: 4px 12px; border-radius: 30px; }
+        @media (max-width: 768px) { .sidebar { width: 80px; } .sidebar-menu li span { display: none; } }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <div id="app"></div>
+    <script>
+        const SUPABASE_URL = "https://ecwlqiuvgmikglnfybon.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_ROrM2kw2PBgsYr1xq7Oi4w_pThtprFF";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <!-- Conteneur principal -->
-    <div id="app">
-        <div style="text-align:center;padding:40px;">
-            Chargement...
-        </div>
-    </div>
+        let appState = { user: null, profile: null, centreId: null, role: null };
 
-    <!-- Application -->
-    <script type="module" src="js/app.js"></script>
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
 
+        async function showLogin() {
+            document.getElementById('app').innerHTML = `
+                <div class="login-container">
+                    <h1>Dar El-Oustad Pro</h1>
+                    <input type="email" id="email" placeholder="Email">
+                    <input type="password" id="password" placeholder="Mot de passe">
+                    <button id="loginBtn" class="btn">Connexion</button>
+                    <button id="registerBtn" style="background:#6c757d;">Créer un compte</button>
+                    <div id="errorMsg" style="color:red; margin-top:10px;"></div>
+                </div>
+            `;
+            document.getElementById('loginBtn').onclick = async () => {
+                const email = document.getElementById('email').value;
+                const pwd = document.getElementById('password').value;
+                const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+                if (error) document.getElementById('errorMsg').innerText = error.message;
+                else await afterLogin();
+            };
+            document.getElementById('registerBtn').onclick = async () => {
+                const email = document.getElementById('email').value;
+                const pwd = document.getElementById('password').value;
+                const { error } = await supabase.auth.signUp({ email, password: pwd });
+                if (error) alert(error.message);
+                else alert("Compte créé ! Vérifiez votre email.");
+            };
+        }
+
+        async function afterLogin() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            if (error || !profile) { alert("Profil introuvable"); return; }
+            appState = { user, profile, centreId: profile.centre_id, role: profile.role };
+            const menus = [
+                { id: 'dashboard', label: 'Tableau de bord', allowed: ['director','teacher'] },
+                { id: 'students', label: 'Étudiants', allowed: ['director','teacher'] },
+                { id: 'teachers', label: 'Enseignants', allowed: ['director'] },
+                { id: 'groups', label: 'Groupes', allowed: ['director','teacher'] },
+                { id: 'attendance', label: 'Présences', allowed: ['director','teacher'] },
+                { id: 'payments', label: 'Paiements', allowed: ['director'] }
+            ];
+            const filtered = menus.filter(m => m.allowed.includes(profile.role));
+            const sidebarHtml = `
+                <div class="sidebar">
+                    <div class="sidebar-brand">Dar El-Oustad</div>
+                    <ul class="sidebar-menu">
+                        ${filtered.map(m => `<li data-view="${m.id}">📊 <span>${m.label}</span></li>`).join('')}
+                    </ul>
+                </div>
+                <div class="main">
+                    <div class="header">
+                        <div>${profile.centre_id?.substring(0,8)}</div>
+                        <button id="logoutBtn" class="btn">Déconnexion</button>
+                    </div>
+                    <div class="content" id="content"></div>
+                </div>
+            `;
+            document.getElementById('app').innerHTML = sidebarHtml;
+            document.getElementById('logoutBtn').onclick = async () => { await supabase.auth.signOut(); showLogin(); };
+            document.querySelectorAll('.sidebar-menu li').forEach(li => {
+                li.onclick = () => loadView(li.dataset.view);
+            });
+            loadView('dashboard');
+        }
+
+        async function loadView(view) {
+            const content = document.getElementById('content');
+            if (view === 'dashboard') {
+                const { data: students } = await supabase.from('students').select('status,payment_amount').eq('centre_id', appState.centreId);
+                const total = students?.length || 0;
+                const paid = students?.filter(s => s.status === 'Paid').length || 0;
+                const revenue = students?.reduce((s,a)=>s+(Number(a.payment_amount)||0),0) || 0;
+                content.innerHTML = `
+                    <div class="dashboard-grid">
+                        <div class="kpi-card"><div>👩‍🎓</div><div><div>Étudiants</div><div class="kpi-value">${total}</div></div></div>
+                        <div class="kpi-card"><div>✅</div><div><div>Payés</div><div class="kpi-value">${paid}</div></div></div>
+                        <div class="kpi-card"><div>💰</div><div><div>Revenus</div><div class="kpi-value">${revenue} DH</div></div></div>
+                    </div>
+                    <div class="card"><h3>Bienvenue, ${appState.user.email}</h3></div>
+                `;
+            }
+            else if (view === 'students') {
+                const { data: students } = await supabase.from('students').select('*').eq('centre_id', appState.centreId);
+                let html = `<div class="card"><h2>Étudiants</h2><form id="studentForm" class="form-row"><input id="sname" placeholder="Nom"><input id="slevel" placeholder="Niveau"><input id="strack" placeholder="Filière"><input id="spayment" type="number" placeholder="Paiement"><select id="sstatus"><option value="Pending">En attente</option><option value="Paid">Payé</option></select><button type="submit" class="btn">Ajouter</button></form></div><div class="card"><table class="data-table"><thead><tr><th>Nom</th><th>Niveau</th><th>Paiement</th><th>Statut</th><th>Actions</th></tr></thead><tbody>`;
+                students.forEach(s => {
+                    html += `<tr><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.level||'-')}</td><td>${s.payment_amount||0} DH</td><td>${s.status}</td><td><button class="delete-student" data-id="${s.id}">Supprimer</button></td></tr>`;
+                });
+                html += `</tbody></table></div>`;
+                content.innerHTML = html;
+                document.getElementById('studentForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('sname').value.trim();
+                    if(!name) return;
+                    await supabase.from('students').insert([{ centre_id: appState.centreId, name, level: document.getElementById('slevel').value, track: document.getElementById('strack').value, payment_amount: parseFloat(document.getElementById('spayment').value)||0, status: document.getElementById('sstatus').value, created_by: appState.user.id }]);
+                    loadView('students');
+                };
+                document.querySelectorAll('.delete-student').forEach(btn => { btn.onclick = async () => { if(confirm("Supprimer ?")) await supabase.from('students').delete().eq('id', btn.dataset.id); loadView('students'); }; });
+            }
+            else if (view === 'teachers') {
+                const { data: teachers } = await supabase.from('teachers').select('*').eq('centre_id', appState.centreId);
+                let html = `<div class="card"><h2>Enseignants</h2><form id="teacherForm" class="form-row"><input id="tname" placeholder="Nom"><input id="tsubject" placeholder="Matière"><button type="submit">Ajouter</button></form></div><div class="card"><ul>`;
+                teachers.forEach(t => html += `<li>${escapeHtml(t.full_name)} - ${escapeHtml(t.subject||'')} <button class="delete-teacher" data-id="${t.id}">Supprimer</button></li>`);
+                html += `</ul></div>`;
+                content.innerHTML = html;
+                document.getElementById('teacherForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('tname').value.trim();
+                    if(!name) return;
+                    await supabase.from('teachers').insert([{ centre_id: appState.centreId, full_name: name, subject: document.getElementById('tsubject').value, created_by: appState.user.id }]);
+                    loadView('teachers');
+                };
+                document.querySelectorAll('.delete-teacher').forEach(btn => { btn.onclick = async () => { if(confirm("Supprimer ?")) await supabase.from('teachers').delete().eq('id', btn.dataset.id); loadView('teachers'); }; });
+            }
+            else if (view === 'groups') {
+                const { data: groups } = await supabase.from('groups').select('*').eq('centre_id', appState.centreId);
+                let html = `<div class="card"><h2>Groupes</h2><form id="groupForm" class="form-row"><input id="gname" placeholder="Nom"><button type="submit">Ajouter</button></form></div><div class="card"><ul>`;
+                groups.forEach(g => html += `<li>${escapeHtml(g.name)} <button class="delete-group" data-id="${g.id}">Supprimer</button></li>`);
+                html += `</ul></div>`;
+                content.innerHTML = html;
+                document.getElementById('groupForm').onsubmit = async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('gname').value.trim();
+                    if(!name) return;
+                    await supabase.from('groups').insert([{ centre_id: appState.centreId, name, created_by: appState.user.id }]);
+                    loadView('groups');
+                };
+                document.querySelectorAll('.delete-group').forEach(btn => { btn.onclick = async () => { if(confirm("Supprimer ?")) await supabase.from('groups').delete().eq('id', btn.dataset.id); loadView('groups'); }; });
+            }
+            else if (view === 'attendance') {
+                content.innerHTML = `<div class="card">Module Présences (à implémenter)</div>`;
+            }
+            else if (view === 'payments') {
+                content.innerHTML = `<div class="card">Module Paiements (à implémenter)</div>`;
+            }
+        }
+
+        supabase.auth.getSession().then(({ data: { session } }) => { if (session) afterLogin(); else showLogin(); });
+    </script>
 </body>
 </html>
