@@ -25,13 +25,20 @@ export async function loadLayout() {
     document.getElementById('header-container').appendChild(header.render());
 
     attachNavigationEvents();
+    initMobileMenu();
 }
 
 function attachNavigationEvents() {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', () => {
             const view = item.dataset.view;
-            if (view) showView(view);
+            if (view) {
+                showView(view);
+                // Fermer sidebar sur mobile après clic
+                if (window.innerWidth <= 768) {
+                    document.querySelector('.sidebar')?.classList.remove('open');
+                }
+            }
         });
     });
 }
@@ -41,4 +48,20 @@ export function showView(viewName) {
         item.classList.toggle('active', item.dataset.view === viewName);
     });
     navigateTo(viewName);
+}
+
+function initMobileMenu() {
+    if (window.innerWidth <= 768) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'menu-toggle';
+        toggleBtn.innerHTML = '☰';
+        toggleBtn.onclick = () => {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar?.classList.toggle('open');
+        };
+        const mainArea = document.querySelector('.main-area');
+        if (mainArea && !document.querySelector('.menu-toggle')) {
+            mainArea.prepend(toggleBtn);
+        }
+    }
 }
