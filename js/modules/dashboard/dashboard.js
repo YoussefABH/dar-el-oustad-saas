@@ -1,104 +1,133 @@
-// Module Dashboard – Affichage moderne avec KPI et activité récente
+// Module Dashboard – version corrigée et sécurisée
+
 export async function renderDashboard(container) {
-    const state = window.appState;
-    if (!state || !state.centreId) {
+
+    const state = window.appState || {};
+
+    if (!container) return;
+
+    if (!state.centreId) {
         container.innerHTML = '<div class="card">Erreur : centre non trouvé</div>';
         return;
     }
 
-    // Charger les étudiants
-    const { data: students, error } = await window.supabaseClient
-        .from('students')
-        .select('id, name, level, status, payment_amount, created_at')
-        .eq('centre_id', state.centreId)
-        .order('created_at', { ascending: false });
+    const client = window.supabaseClient;
 
-    if (error) {
-        container.innerHTML = `<div class="card error">Erreur : ${error.message}</div>`;
+    if (!client) {
+        container.innerHTML = '<div class="card error">Erreur : Supabase non initialisé</div>';
         return;
     }
 
-    const total = students?.length || 0;
-    const paid = students?.filter(s => s.status === 'Paid').length || 0;
-    const pending = total - paid;
-    const revenue = students?.reduce((sum, s) => sum + (Number(s.payment_amount) || 0), 0) || 0;
+    try {
 
-    // Derniers étudiants (5 premiers)
-    const recentStudents = students?.slice(0, 5) || [];
+        const { data: students, error } = await client
+            .from('students')
+            .select('id, name, level, status, payment_amount, created_at')
+            .eq('centre_id', state.centreId)
+            .order('created_at', { ascending: false });
 
-    // Statistiques du mois (exemple simplifié : on compare avec le mois dernier fictif)
-    const thisMonth = new Date().getMonth();
-    const studentsThisMonth = students?.filter(s => new Date(s.created_at).getMonth() === thisMonth).length || 0;
-    const paidThisMonth = students?.filter(s => s.status === 'Paid' && new Date(s.created_at).getMonth() === thisMonth).length || 0;
+        if (error) {
+            container.innerHTML = `<div class="card error">Erreur : ${error.message}</div>`;
+            return;
+        }
 
-    // Construction HTML
-    const html = `
-        <div class="dashboard-grid">
-            <!-- Cartes KPI -->
-            <div class="kpi-card">
-                <div class="kpi-icon">👩‍🎓</div>
-                <div class="kpi-content">
+        const list = students || [];
+
+        const total = list.length;
+        const paid = list.filter(s => s.status === 'Paid').length;
+        const pending = total - paid;
+
+        const revenue = list.reduce(
+            (sum, s) => sum + (Number(s.payment_amount) || 0),
+            0
+        );
+
+        const thisMonth = new Date().getMonth();
+
+        const studentsThisMonth = list.filter(
+            s => new Date(s.created_at).getMonth() === thisMonth
+        ).length;
+
+        const paidThisMonth = list.filter(
+            s => s.status === 'Paid' &&
+                 new Date(s.created_at).getMonth() === thisMonth
+        ).length;
+
+        const recentStudents = list.slice(0, 5);
+
+        container.innerHTML = `
+            <div class="dashboard-grid">
+
+                <div class="kpi-card">
+                    <div class="kpi-icon">👩‍🎓</div>
                     <div class="kpi-title">Étudiants</div>
                     <div class="kpi-value">${total}</div>
                     <div class="kpi-trend">+${studentsThisMonth} ce mois</div>
                 </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon">✅</div>
-                <div class="kpi-content">
+
+                <div class="kpi-card">
+                    <div class="kpi-icon">✅</div>
                     <div class="kpi-title">Payés</div>
                     <div class="kpi-value">${paid}</div>
-                    <div class="kpi-trend">+${paidThisMonth} traités</div>
+                    <div class="kpi-trend">+${paidThisMonth}</div>
                 </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon">📄</div>
-                <div class="kpi-content">
-                    <div class="kpi-title">Factures</div>
-                    <div class="kpi-value">${paid}</div>
-                    <div class="kpi-trend">+${paidThisMonth} à facturer</div>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon">⏳</div>
-                <div class="kpi-content">
+
+                <div class="kpi-card">
+                    <div class="kpi-icon">⏳</div>
                     <div class="kpi-title">En attente</div>
                     <div class="kpi-value">${pending}</div>
-                    <div class="kpi-trend">en souffrance</div>
                 </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon">💰</div>
-                <div class="kpi-content">
+
+                <div class="kpi-card">
+                    <div class="kpi-icon">💰</div>
                     <div class="kpi-title">Revenus</div>
                     <div class="kpi-value">${revenue} DH</div>
-                    <div class="kpi-trend">total encaissé</div>
                 </div>
+
             </div>
-        </div>
 
-        <!-- Section activité mensuelle -->
-        <div class="card activity-card">
-            <h3>📅 Activité récente</h3>
-            ${recentStudents.length === 0 ? '<p>Aucun étudiant inscrit pour le moment.</p>' : `
-                <div class="activity-list">
-                    ${recentStudents.map(s => `
-                        <div class="activity-item">
-                            <div class="activity-name">${escapeHtml(s.name)}</div>
-                            <div class="activity-detail">Inscrit le ${new Date(s.created_at).toLocaleDateString('fr-FR')}</div>
-                            <div class="activity-status ${s.status === 'Paid' ? 'status-paid' : 'status-pending'}">${s.status === 'Paid' ? 'Payé' : 'En attente'}</div>
-                        </div>
-                    `).join('')}
-                </div>
-                ${total > 5 ? `<div class="activity-footer">+${total - 5} autres étudiants</div>` : ''}
-            `}
-        </div>
-    `;
+            <div class="card activity-card">
+                <h3>📅 Activité récente</h3>
 
-    container.innerHTML = html;
+                ${
+                    recentStudents.length === 0
+                        ? '<p>Aucun étudiant.</p>'
+                        : recentStudents.map(s => `
+                            <div class="activity-item">
+                                <div>
+                                    <strong>${escapeHtml(s.name || '')}</strong>
+                                    <div style="font-size:12px;opacity:0.7">
+                                        ${new Date(s.created_at).toLocaleDateString('fr-FR')}
+                                    </div>
+                                </div>
+
+                                <span class="${
+                                    s.status === 'Paid'
+                                        ? 'status-paid'
+                                        : 'status-pending'
+                                }">
+                                    ${s.status === 'Paid' ? 'Payé' : 'En attente'}
+                                </span>
+                            </div>
+                        `).join('')
+                }
+            </div>
+        `;
+
+    } catch (err) {
+
+        container.innerHTML = `
+            <div class="card error">
+                Erreur dashboard : ${err.message}
+            </div>
+        `;
+    }
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m] || m));
+// Sécurisation HTML
+function escapeHtml(str = '') {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
         }
