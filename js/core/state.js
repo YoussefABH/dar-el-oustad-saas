@@ -1,27 +1,40 @@
-let appState = {
-    user: null,
-    profile: null,
-    centreId: null,
-    role: null,
-    config: null
-};
+class AppStateManager extends EventTarget {
+    constructor() {
+        super();
+        this.state = {
+            user: null,
+            profile: null,
+            centreId: null,
+            role: null, // 'director' ou 'teacher'
+            config: null
+        };
+    }
 
-const stateEmitter = new EventTarget();
+    setAppState(newState) {
+        this.state = { ...this.state, ...newState };
+        // Propagation de l'événement de changement d'état à travers l'application
+        this.dispatchEvent(new CustomEvent('statechange', { detail: this.state }));
+    }
 
-export function setAppState(newState) {
-    appState = { ...appState, ...newState };
-    window.appState = appState; // debug
-    stateEmitter.dispatchEvent(new CustomEvent('stateChange', { detail: { state: appState } }));
+    getAppState() {
+        return this.state;
+    }
+
+    isDirector() {
+        return this.state.role === 'director';
+    }
+
+    onStateChange(callback) {
+        this.addEventListener('statechange', (e) => callback(e.detail));
+    }
 }
 
-export function getAppState() {
-    return appState;
-}
+const stateManager = new AppStateManager();
 
-export function onStateChange(callback) {
-    stateEmitter.addEventListener('stateChange', (e) => callback(e.detail.state));
-}
+export const setAppState = stateManager.setAppState.bind(stateManager);
+export const getAppState = stateManager.getAppState.bind(stateManager);
+export const isDirector = stateManager.isDirector.bind(stateManager);
+export const onStateChange = stateManager.onStateChange.bind(stateManager);
 
-export function isDirector() {
-    return appState.role === 'director';
-}
+// Rétrocompatibilité console globale si nécessaire
+window.appStateInstance = stateManager;
