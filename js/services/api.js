@@ -1,134 +1,126 @@
 import { supabaseClient } from '../config/supabase.js';
-import { getAppState } from '../core/state.js';
 import { safeQuery } from './safeQuery.js';
+import { getAppState } from '../core/state.js';
 
 export class ApiService {
-    // Students
+    
+    // --- ÉTUDIANTS ---
     static async fetchStudents() {
         const { centreId } = getAppState();
-        return safeQuery(
-            supabaseClient.from('students').select('*').eq('centre_id', centreId)
+        return safeQuery(() => supabaseClient
+            .from('students')
+            .select('*')
+            .eq('centre_id', centreId)
+            .order('created_at', { ascending: false })
         );
     }
 
-    static async createStudent(data) {
+    static async createStudent(studentData) {
         const { centreId, user } = getAppState();
-        return safeQuery(
-            supabaseClient.from('students').insert([{
-                ...data,
+        return safeQuery(() => supabaseClient
+            .from('students')
+            .insert([{
+                ...studentData,
                 centre_id: centreId,
                 created_by: user.id
             }])
         );
     }
 
-    // Teachers
+    // --- ENSEIGNANTS ---
     static async fetchTeachers() {
         const { centreId } = getAppState();
-        return safeQuery(
-            supabaseClient.from('teachers').select('*').eq('centre_id', centreId)
+        return safeQuery(() => supabaseClient
+            .from('teachers')
+            .select('*')
+            .eq('centre_id', centreId)
         );
     }
 
-    static async createTeacher(data) {
+    static async createTeacher(teacherData) {
         const { centreId, user } = getAppState();
-        return safeQuery(
-            supabaseClient.from('teachers').insert([{
-                ...data,
+        return safeQuery(() => supabaseClient
+            .from('teachers')
+            .insert([{
+                ...teacherData,
                 centre_id: centreId,
                 created_by: user.id
             }])
         );
     }
 
-    // Groups
+    // --- GROUPES ---
     static async fetchGroups() {
         const { centreId } = getAppState();
-        return safeQuery(
-            supabaseClient.from('groups').select('*').eq('centre_id', centreId)
+        return safeQuery(() => supabaseClient
+            .from('groups')
+            .select('*')
+            .eq('centre_id', centreId)
         );
     }
 
-    static async createGroup(data) {
+    static async createGroup(groupData) {
         const { centreId, user } = getAppState();
-        return safeQuery(
-            supabaseClient.from('groups').insert([{
-                ...data,
+        return safeQuery(() => supabaseClient
+            .from('groups')
+            .insert([{
+                ...groupData,
                 centre_id: centreId,
                 created_by: user.id
             }])
         );
     }
 
-    // Payments
-    static async fetchPayments() {
-        const { centreId } = getAppState();
-        return safeQuery(
-            supabaseClient.from('payments').select('*, students(name)').eq('centre_id', centreId)
-        );
-    }
-
-    static async createPayment(data) {
-        const { centreId, user } = getAppState();
-        return safeQuery(
-            supabaseClient.from('payments').insert([{
-                ...data,
-                centre_id: centreId,
-                created_by: user.id
-            }])
-        );
-    }
-
-    // Attendance
-    static async upsertAttendance(record) {
-        const { centreId, user } = getAppState();
-        return safeQuery(
-            supabaseClient.from('attendance').upsert({
-                ...record,
-                centre_id: centreId,
-                created_by: user.id
-            })
-        );
-    }
-
-    // Parents
+    // --- PARENTS ---
     static async fetchParents() {
         const { centreId } = getAppState();
-        return safeQuery(
-            supabaseClient.from('parents').select('*').eq('centre_id', centreId)
+        return safeQuery(() => supabaseClient
+            .from('parents')
+            .select('*')
+            .eq('centre_id', centreId)
         );
     }
 
-    static async createParent(data) {
+    static async createParent(parentData) {
         const { centreId, user } = getAppState();
-        return safeQuery(
-            supabaseClient.from('parents').insert([{
-                ...data,
+        return safeQuery(() => supabaseClient
+            .from('parents')
+            .insert([{
+                ...parentData,
                 centre_id: centreId,
                 created_by: user.id
             }])
         );
     }
 
-    // Settings / Centre
-    static async updateCentreSettings(data) {
-        const { centreId } = getAppState();
-        return safeQuery(
-            supabaseClient.from('settings').upsert({ centre_id: centreId, ...data }, { onConflict: 'centre_id' })
+    // --- PRÉSENCES ---
+    static async saveAttendance(attendanceRecords) {
+        return safeQuery(() => supabaseClient
+            .from('attendance')
+            .upsert(attendanceRecords)
         );
     }
 
-    static async fetchCentreInfo() {
+    // --- PAIEMENTS ---
+    static async fetchPayments() {
         const { centreId } = getAppState();
-        return safeQuery(
-            supabaseClient.from('centres').select('*').eq('id', centreId).single()
+        return safeQuery(() => supabaseClient
+            .from('payments')
+            .select('amount, payment_method, payment_date, students(name)')
+            .eq('centre_id', centreId)
+            .order('payment_date', { ascending: false })
         );
     }
 
-    static async updateCentreInfo(data) {
-        const { centreId } = getAppState();
-        return safeQuery(
-            supabaseClient.from('centres').update(data).eq('id', centreId)
+    static async createPayment(paymentData) {
+        const { centreId, user } = getAppState();
+        return safeQuery(() => supabaseClient
+            .from('payments')
+            .insert([{
+                ...paymentData,
+                centre_id: centreId,
+                created_by: user.id
+            }])
         );
     }
 }
