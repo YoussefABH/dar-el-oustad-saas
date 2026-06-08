@@ -2,6 +2,7 @@ import { supabaseClient } from '../config/supabase.js';
 import { setAppState } from './state.js';
 import { loadCenterConfig } from '../config/app-config.js';
 import { loadLayout, showView } from './layout.js';
+import { safeQuery } from '../services/safeQuery.js';
 
 export async function getCurrentUser() {
     const { data: { user } } = await supabaseClient.auth.getUser();
@@ -29,17 +30,29 @@ export async function afterLogin() {
     const user = await getCurrentUser();
     if (!user) throw new Error('Authentification échouée');
 
-    const { data: profile, error } = await supabaseClient
+    // Récupération sécurisée du profil utilisateur via safeQuery
+    const profile = await safeQuery(() => supabaseClient
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .single()
+    );
 
-    if (error || !profile?.centre_id) throw new Error('Profil ou ID Centre introuvable');
+    if (!profile || !profile.centre_id) {
+        throw new Error('Profil utilisateur ou ID de centre introuvable.');
+    }
 
     const config = await loadCenterConfig(profile.centre_id);
 
-    setAppState({ user, profile, centreId: profile.centre_id, role: profile.role, config });
+    // Initialisation de l'état centralisé
+    setAppState({ 
+        user, 
+        profile, 
+        centreId: profile.centre_id, 
+        role: profile.role || 'teacher', 
+        config 
+    });
+
     await loadLayout();
     showView('dashboard');
 }
