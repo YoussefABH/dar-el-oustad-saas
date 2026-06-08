@@ -1,7 +1,8 @@
-import { getAppState } from './state.js';
+import { getAppState, onStateChange } from './state.js';
 import { navigateTo } from './router.js';
 import { Sidebar } from '../components/sidebar.js';
 import { Header } from '../components/header.js';
+import { escapeHtml } from '../utils/dom.js';
 
 export async function loadLayout() {
     const state = getAppState();
@@ -18,6 +19,7 @@ export async function loadLayout() {
         </div>
     `;
 
+    // Rendu initial des composants structurels
     const sidebar = new Sidebar(state.role);
     document.getElementById('sidebar-container').appendChild(sidebar.render());
 
@@ -25,20 +27,21 @@ export async function loadLayout() {
     document.getElementById('header-container').appendChild(header.render());
 
     attachNavigationEvents();
-    initMobileMenu();
+
+    // ÉCOUTEUR RÉACTIF : Si le nom du centre change dans les paramètres, le header se met à jour instantanément
+    onStateChange((updatedState) => {
+        const headerTitle = document.querySelector('header div');
+        if (headerTitle && updatedState.config?.establishment?.name) {
+            headerTitle.innerHTML = `🏢 ${escapeHtml(updatedState.config.establishment.name)}`;
+        }
+    });
 }
 
 function attachNavigationEvents() {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', () => {
             const view = item.dataset.view;
-            if (view) {
-                showView(view);
-                // Fermer sidebar sur mobile après clic
-                if (window.innerWidth <= 768) {
-                    document.querySelector('.sidebar')?.classList.remove('open');
-                }
-            }
+            if (view) showView(view);
         });
     });
 }
@@ -48,20 +51,4 @@ export function showView(viewName) {
         item.classList.toggle('active', item.dataset.view === viewName);
     });
     navigateTo(viewName);
-}
-
-function initMobileMenu() {
-    if (window.innerWidth <= 768) {
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'menu-toggle';
-        toggleBtn.innerHTML = '☰';
-        toggleBtn.onclick = () => {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar?.classList.toggle('open');
-        };
-        const mainArea = document.querySelector('.main-area');
-        if (mainArea && !document.querySelector('.menu-toggle')) {
-            mainArea.prepend(toggleBtn);
-        }
-    }
 }
