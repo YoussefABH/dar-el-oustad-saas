@@ -1,140 +1,79 @@
 import { getAppState } from './state.js';
 
-// Définition des routes
+// Routes avec chemins complets depuis la racine du site
 const routes = {
-    dashboard: './modules/dashboard/dashboard.js',
-    students: './modules/students/students.js',
-    teachers: './modules/teachers/teachers.js',
-    groups: './modules/groups/groups.js',
-    attendance: './modules/attendance/attendance.js',
-    payments: './modules/payments/payments.js',
-    expenses: './modules/expenses/expenses.js',
-    courses: './modules/courses/courses.js',
-    reports: './modules/reports/reports.js',
-    settings: './modules/settings/settings.js'
+    dashboard: 'js/modules/dashboard/dashboard.js',
+    students: 'js/modules/students/students.js',
+    teachers: 'js/modules/teachers/teachers.js',
+    groups: 'js/modules/groups/groups.js',
+    attendance: 'js/modules/attendance/attendance.js',
+    payments: 'js/modules/payments/payments.js',
+    expenses: 'js/modules/expenses/expenses.js',
+    courses: 'js/modules/courses/courses.js',
+    reports: 'js/modules/reports/reports.js',
+    settings: 'js/modules/settings/settings.js'
 };
 
 const rolePermissions = {
-    director: [
-        'dashboard',
-        'students',
-        'teachers',
-        'groups',
-        'attendance',
-        'payments',
-        'expenses',
-        'courses',
-        'reports',
-        'settings'
-    ],
-    teacher: [
-        'dashboard',
-        'students',
-        'groups',
-        'attendance',
-        'courses'
-    ]
+    director: ['dashboard', 'students', 'teachers', 'groups', 'attendance', 'payments', 'expenses', 'courses', 'reports', 'settings'],
+    teacher: ['dashboard', 'students', 'groups', 'attendance', 'courses']
 };
 
 const loadedModules = {};
 
+function getBasePath() {
+    // On récupère l'URL du script actuel (router.js)
+    const scriptUrl = import.meta.url;
+    // On cherche le dernier '/js/' pour extraire la racine du site
+    const index = scriptUrl.indexOf('/js/');
+    if (index === -1) {
+        // Fallback (développement local)
+        return window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+    }
+    return scriptUrl.substring(0, index + 1); // +1 pour garder le slash final
+}
+
 export async function navigateTo(viewName) {
     const container = document.getElementById('content-container');
-
-    if (!container) {
-        console.error('Container introuvable : #content-container');
-        return;
-    }
+    if (!container) return;
 
     const state = getAppState();
-
-    // Vérification session
-    if (!state?.user) {
-        container.innerHTML = `
-            <div class="card alert-error">
-                ⛓️ Session expirée. Veuillez vous reconnecter.
-            </div>
-        `;
+    if (!state.user) {
+        container.innerHTML = `<div class="card alert-error">⛓️ Session expirée. Veuillez vous reconnecter.</div>`;
+        return;
+    }
+    if (rolePermissions[state.role] && !rolePermissions[state.role].includes(viewName)) {
+        container.innerHTML = `<div class="card alert-error">⛔ Accès non autorisé pour votre rôle (${state.role}).</div>`;
         return;
     }
 
-    // Vérification permissions
-    if (
-        rolePermissions[state.role] &&
-        !rolePermissions[state.role].includes(viewName)
-    ) {
-        container.innerHTML = `
-            <div class="card alert-error">
-                ⛔ Accès non autorisé pour le rôle : ${state.role}
-            </div>
-        `;
-        return;
-    }
-
-    // Vérification route
-    if (!routes[viewName]) {
-        container.innerHTML = `
-            <div class="card alert-error">
-                Route inconnue : ${viewName}
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = `
-        <div class="loader-global">
-            <div class="spinner"></div>
-            <p>Chargement...</p>
-        </div>
-    `;
+    container.innerHTML = `<div class="loader-global"><div class="spinner"></div><p>Chargement de ${viewName}...</p></div>`;
 
     try {
-        // Utilisation de import.meta.url (plus fiable)
-        const moduleUrl = new URL(routes[viewName], import.meta.url).href;
+        if (!routes[viewName]) throw new Error(`Route inconnue : ${viewName}`);
 
-        // Chargement unique
+        const baseUrl = getBasePath();
+        const fullPath = baseUrl + routes[viewName];
+
         if (!loadedModules[viewName]) {
-            loadedModules[viewName] = await import(moduleUrl);
+            loadedModules[viewName] = await import(fullPath);
         }
-
         const module = loadedModules[viewName];
+        window.appState = getAppState();
 
-        // Synchronisation état global
-        window.appState = state;
-
-        // Compatibilité render() ou renderDashboard()
         if (typeof module.render === 'function') {
             await module.render(container);
-        } else if (typeof module.renderDashboard === 'function') {
-            await module.renderDashboard(container);
         } else {
-            throw new Error(
-                `Le module "${viewName}" ne contient aucune fonction render().`
-            );
+            throw new Error(`Le module ${viewName} n'exporte pas de fonction 'render'.`);
         }
-
     } catch (error) {
-        console.error(`Erreur chargement ${viewName}:`, error);
-
+        console.error(`Erreur de chargement de la vue ${viewName} :`, error);
         container.innerHTML = `
-            <div class="card alert-error">
-                <h3>⚠️ Erreur de chargement</h3>
-
-                <p>
-                    <strong>Vue :</strong> ${viewName}
-                </p>
-
-                <p>
-                    <strong>Message :</strong>
-                    ${error.message}
-                </p>
-
-                <button
-                    class="btn btn-sm"
-                    onclick="window.location.reload()"
-                >
-                    ⟳ Recharger
-                </button>
+            <div class="card alert-error" style="border-left-color: #e63946;">
+                <h3 style="color: #e63946;">⚠️ Erreur technique</h3>
+                <p><strong>Fichier :</strong> ${routes[viewName] || viewName}</p>
+                <p><strong>Détail :</strong> ${error.message}</p>
+                <button class="btn btn-sm" onclick="window.location.reload()" style="margin-top: 12px;">⟳ Recharger l'application</button>
             </div>
         `;
     }
