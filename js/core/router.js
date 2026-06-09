@@ -6,6 +6,7 @@ const rolePermissions = {
     teacher: ['dashboard', 'students', 'groups', 'attendance', 'parents']
 };
 
+// ATTENTION À LA CASSE : Vérifiez si vos dossiers sur GitHub ont des majuscules !
 const routes = {
     dashboard: 'modules/dashboard/dashboard.js',
     students: 'modules/students/students.js',
@@ -14,7 +15,7 @@ const routes = {
     attendance: 'modules/attendance/attendance.js',
     payments: 'modules/payments/payments.js',
     settings: 'modules/settings/settings.js',
-    center: 'modules/center/center.js',
+    center: 'modules/center/center.js',     // Si votre dossier s'appelle "center"
     parents: 'modules/parents/parents.js'
 };
 
@@ -48,7 +49,7 @@ export async function navigateTo(viewName) {
         return;
     }
 
-    // 2. Affichage du loader-global dans le conteneur cible pendant le chargement du module
+    // 2. Affichage d'un loader interne propre
     container.innerHTML = `
         <div style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
             <div class="spinner"></div>
@@ -59,6 +60,8 @@ export async function navigateTo(viewName) {
         if (!routes[viewName]) throw new Error(`La vue "${viewName}" n'existe pas.`);
         
         const moduleUrl = `${getBasePath()}${routes[viewName]}`;
+        console.log("Tentative de chargement du module :", moduleUrl); // Pour déboguer dans la console F12
+        
         const module = await import(moduleUrl);
         
         if (typeof module.render === 'function') {
@@ -68,12 +71,19 @@ export async function navigateTo(viewName) {
             throw new Error(`Le module "${viewName}" ne possède pas de méthode render().`);
         }
     } catch (err) {
-        console.error("Erreur de routage :", err);
+        console.error("Erreur de routage critique :", err);
         container.innerHTML = `
-            <div class="card" style="border-left: 4px solid #ef4444;">
-                <h3 style="color: #ef4444;">Impossible de charger la page</h3>
-                <p style="margin-top: 8px; color: #475569;">${err.message}</p>
-                <button class="btn btn-sm" style="margin-top: 16px;" onclick="window.location.reload()">Recharger l'application</button>
+            <div class="card" style="border-left: 4px solid #ef4444; padding: 24px;">
+                <h3 style="color: #ef4444; display: flex; align-items: center; gap: 8px;">
+                    ⚠️ Erreur d'aiguillage du module [${viewName}]
+                </h3>
+                <p style="margin-top: 12px; color: #475569; background: #f8fafc; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.9rem;">
+                    ${err.message}
+                </p>
+                <p style="margin-top: 12px; font-size: 0.85rem; color: #64748b;">
+                    💡 Vérifiez que le nom du dossier sur votre dépôt GitHub ne contient pas de majuscule (ex: "center" au lieu de "Center").
+                </p>
+                <button class="btn btn-sm" style="margin-top: 16px;" onclick="window.location.reload()">Réessayer</button>
             </div>
         `;
     }
