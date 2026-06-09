@@ -16,7 +16,7 @@ export async function loadCenterConfig(centreId) {
             .select('*')
             .eq('centre_id', centreId)
             .maybeSingle();
-
+            
         if (data) {
             currentConfig = {
                 establishment: { ...defaultAppConfig.establishment, ...data.establishment },
