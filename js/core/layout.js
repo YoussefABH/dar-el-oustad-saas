@@ -28,7 +28,7 @@ export async function loadLayout() {
 
     attachNavigationEvents();
 
-    // ÉCOUTEUR RÉACTIF : Si le nom du centre change dans les paramètres, le header se met à jour instantanément
+    // ÉCOUTEUR RÉACTIF : Changement dynamique du titre
     onStateChange((updatedState) => {
         const headerTitle = document.querySelector('header div');
         if (headerTitle && updatedState.config?.establishment?.name) {
