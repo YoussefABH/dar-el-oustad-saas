@@ -21,6 +21,7 @@ export class Sidebar {
             <div class="sidebar-brand">Dar El-Oustad Pro</div>
             <ul class="sidebar-menu"></ul>
         `;
+        
         const menuList = aside.querySelector('.sidebar-menu');
         this.menus.filter(m => m.allowed.includes(this.role)).forEach(menu => {
             const li = document.createElement('li');
