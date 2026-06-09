@@ -2,25 +2,13 @@ import { ApiService } from '../../services/api.js';
 import { escapeHtml } from '../../utils/dom.js';
 
 export async function render(container) {
-    if (!container) return;
-
     container.innerHTML = `
         <div style="display:flex;justify-content:center;padding:40px;">
             <div class="spinner"></div>
         </div>
     `;
-
     try {
-        // Sécurité : Vérification que l'ApiService et sa méthode existent
-        if (!ApiService || typeof ApiService.fetchStudents !== 'function') {
-            throw new Error("Le service ApiService n'est pas initialisé ou la méthode fetchStudents est manquante.");
-        }
-
         const students = await ApiService.fetchStudents();
-
-        console.log('=== DASHBOARD DEBUG ===');
-        console.log('Students:', students);
-        
         const safeStudents = Array.isArray(students) ? students : [];
 
         const total = safeStudents.length;
@@ -81,32 +69,21 @@ export async function render(container) {
                             </tr>
                         </thead>
                         <tbody>
-                            ${
-                                safeStudents.length === 0
-                                ? `<tr>
-                                    <td colspan="3" style="text-align:center;color:#64748b;">
-                                        Aucun étudiant trouvé.
+                            ${safeStudents.length === 0 ? `
+                                <tr>
+                                    <td colspan="3" style="text-align:center;color:#64748b;">Aucun étudiant trouvé.</td>
+                                </tr>
+                            ` : safeStudents.slice(0, 5).map(student => `
+                                <tr>
+                                    <td><strong>${escapeHtml(student?.name || 'Sans nom')}</strong></td>
+                                    <td>${escapeHtml(student?.level || 'Non spécifié')}</td>
+                                    <td>
+                                        <span class="btn btn-sm ${String(student?.status || '').toLowerCase() === 'paid' ? '' : 'btn-danger'}" style="pointer-events:none;padding:4px 8px;font-size:.8rem;">
+                                            ${String(student?.status || '').toLowerCase() === 'paid' ? 'Validé' : 'En attente'}
+                                        </span>
                                     </td>
-                                   </tr>`
-                                : safeStudents
-                                    .slice(0, 5)
-                                    .map(student => `
-                                        <tr>
-                                            <td>
-                                                <strong>${escapeHtml(student?.name || 'Sans nom')}</strong>
-                                            </td>
-                                            <td>
-                                                ${escapeHtml(student?.level || 'Non spécifié')}
-                                            </td>
-                                            <td>
-                                                <span class="btn btn-sm ${String(student?.status || '').toLowerCase() === 'paid' ? '' : 'btn-danger'}"
-                                                      style="pointer-events:none;padding:4px 8px;font-size:.8rem;">
-                                                    ${String(student?.status || '').toLowerCase() === 'paid' ? 'Validé' : 'En attente'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    `).join('')
-                            }
+                                </tr>
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -119,9 +96,7 @@ export async function render(container) {
             <div class="card alert-error">
                 <h3>⚠️ Erreur Dashboard</h3>
                 <p>${escapeHtml(error.message || 'Erreur inconnue')}</p>
-                <pre style="white-space:pre-wrap;overflow:auto;margin-top:10px;background:#fff1f2;padding:10px;border-radius:4px;color:#991b1b;">
-${escapeHtml(JSON.stringify(error, null, 2))}
-                </pre>
+                <pre style="white-space:pre-wrap;overflow:auto;">${escapeHtml(JSON.stringify(error, null, 2))}</pre>
             </div>
         `;
     }
