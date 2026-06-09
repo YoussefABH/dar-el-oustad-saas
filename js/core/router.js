@@ -1,5 +1,6 @@
 import { getAppState } from './state.js';
 
+// Définition des routes avec chemins relatifs (depuis le dossier courant js/core/)
 const routes = {
     dashboard: '../modules/dashboard/dashboard.js',
     students: '../modules/students/students.js',
@@ -13,64 +14,83 @@ const routes = {
     settings: '../modules/settings/settings.js'
 };
 
+// Permissions par rôle (à adapter selon votre logique)
+const rolePermissions = {
+    director: ['dashboard', 'students', 'teachers', 'groups', 'attendance', 'payments', 'expenses', 'courses', 'reports', 'settings'],
+    teacher: ['dashboard', 'students', 'groups', 'attendance', 'courses']
+};
+
+// Cache des modules déjà chargés
 const loadedModules = {};
+
+// Fonction utilitaire pour obtenir le chemin de base absolu du projet (fonctionne en local et sur GitHub Pages)
+function getBasePath() {
+    // On utilise l'URL du script courant pour déterminer la racine
+    const scriptUrl = import.meta.url;
+    // Cherche le dernier '/' avant le dossier 'js/core/'
+    const base = scriptUrl.substring(0, scriptUrl.lastIndexOf('/js/') + 1);
+    return base;
+}
 
 export async function navigateTo(viewName) {
     const container = document.getElementById('content-container');
     if (!container) return;
 
-    // Loader temporaire pendant le téléchargement du module .js
-    container.innerHTML = `
-        <div style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
-            <div style="width: 32px; height: 32px; border: 3px solid rgba(0,0,0,0.1); border-top-color: #2c7da0; border-radius: 50%; animation: spinRouter 0.8s linear infinite;"></div>
-        </div>
-    `;
+    // Vérification des droits d'accès
+    const state = getAppState();
+    if (!state.user) {
+        container.innerHTML = `<div class="card alert-error">⛓️ Session expirée. Veuillez vous reconnecter.</div>`;
+        return;
+    }
+    if (rolePermissions[state.role] && !rolePermissions[state.role].includes(viewName)) {
+        container.innerHTML = `<div class="card alert-error">⛔ Accès non autorisé pour votre rôle (${state.role}).</div>`;
+        return;
+    }
+
+    // Afficher un indicateur de chargement
+    container.innerHTML = `<div class="loader-global"><div class="spinner"></div><p>Chargement de ${viewName}...</p></div>`;
 
     try {
         if (!routes[viewName]) {
-            throw new Error(`Route introuvable pour le module : ${viewName}`);
+            throw new Error(`Route inconnue : ${viewName}`);
         }
 
-        // Résolution d'URL robuste par rapport à l'emplacement de router.js
-        const moduleUrl = new URL(routes[viewName], import.meta.url).href;
+        // Résolution du chemin absolu pour l'import dynamique (fonctionne sur GitHub Pages)
+        const baseUrl = getBasePath();
+        const relativePath = routes[viewName];
+        // Nettoyer les double slashes si nécessaire
+        const fullPath = `${baseUrl}${relativePath.replace(/^\.\.\//, '')}`;
 
+        // Importer le module (avec cache)
         if (!loadedModules[viewName]) {
-            loadedModules[viewName] = await import(moduleUrl);
+            loadedModules[viewName] = await import(fullPath);
         }
-
         const module = loadedModules[viewName];
-        container.innerHTML = ''; // Nettoyage du loader
 
-        // Synchronisation de l'état global attendu par vos modules autonomes
+        // Rendre l'état global accessible si certains modules en ont besoin
         window.appState = getAppState();
 
-        // Détection de la fonction de rendu appropriée
+        // Exécuter la fonction de rendu
         if (typeof module.render === 'function') {
             await module.render(container);
-        } else if (typeof module[`render${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`] === 'function') {
+        } 
+        // Fallback pour d'éventuels modules nommés renderDashboard, etc. (optionnel)
+        else if (typeof module[`render${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`] === 'function') {
             await module[`render${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`](container);
-        } else {
-            throw new Error(`Le module "${viewName}" ne contient aucune fonction de rendu compatible.`);
+        } 
+        else {
+            throw new Error(`Le module ${viewName} n'exporte pas de fonction 'render' ou 'render${viewName}'.`);
         }
 
     } catch (error) {
-        console.error(`Erreur critique sur le module ${viewName}:`, error);
+        console.error(`Erreur de chargement de la vue ${viewName} :`, error);
         container.innerHTML = `
-            <div class="card" style="border-left: 4px solid #e63946; padding: 20px;">
-                <h3 style="color: #e63946;">⚠️ Échec de chargement de la vue [${viewName}]</h3>
-                <p style="margin-top: 10px; font-family: monospace; font-size: 0.85rem; background: #fff5f5; padding: 10px; border-radius: 8px;">
-                    Détails : ${error.message}
-                </p>
-                <button class="btn btn-sm" style="margin-top: 12px;" onclick="window.location.reload()">Forcer le rechargement</button>
+            <div class="card alert-error" style="border-left-color: #e63946;">
+                <h3 style="color: #e63946;">⚠️ Erreur technique</h3>
+                <p><strong>Fichier :</strong> ${routes[viewName] || viewName}</p>
+                <p><strong>Détail :</strong> ${error.message}</p>
+                <button class="btn btn-sm" onclick="window.location.reload()" style="margin-top: 12px;">⟳ Recharger l'application</button>
             </div>
         `;
     }
-}
-
-// Injection rapide du style de rotation si absent
-if (!document.getElementById('router-spin-style')) {
-    const style = document.createElement('style');
-    style.id = 'router-spin-style';
-    style.innerHTML = `@keyframes spinRouter { to { transform: rotate(360deg); } }`;
-    document.head.appendChild(style);
 }
