@@ -9,12 +9,7 @@ import { showAlert } from '../utils/dom.js';
 export async function safeQuery(queryFunc, retries = 2, delay = 1000) {
     try {
         const response = await queryFunc();
-        
-        // Si Supabase renvoie une erreur explicite
-        if (response.error) {
-            throw response.error;
-        }
-        
+        if (response.error) throw response.error;
         return response.data;
     } catch (error) {
         if (retries > 0) {
@@ -23,7 +18,6 @@ export async function safeQuery(queryFunc, retries = 2, delay = 1000) {
             return safeQuery(queryFunc, retries - 1, delay * 2);
         }
         
-        // Journalisation et notification à l'utilisateur si tout échoue
         console.error("Erreur critique de communication API :", error);
         showAlert(error.message || "Erreur de connexion au serveur.", "error");
         throw error;
