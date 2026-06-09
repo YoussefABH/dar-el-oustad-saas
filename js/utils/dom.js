@@ -1,5 +1,7 @@
 /**
  * Empêche les injections de scripts malveillants (XSS)
+ * @param {string} str 
+ * @returns {string}
  */
 export function escapeHtml(str = '') {
     return String(str).replace(/[&<>"']/g, m => ({
@@ -13,6 +15,8 @@ export function escapeHtml(str = '') {
 
 /**
  * Affiche une notification Toast animée temporaire
+ * @param {string} message 
+ * @param {string} type - 'success' ou 'error'
  */
 export function showAlert(message, type = 'error') {
     // Évite l'accumulation de toasts obsolètes
@@ -52,14 +56,32 @@ export async function withLoading(buttonElement, asyncAction) {
             Chargement...
         </span>
     `;
-
+    
     try {
         await asyncAction();
     } catch (error) {
-        // L'erreur est interceptée ici si besoin d'un traitement local, mais safeQuery s'en occupe déjà
         throw error;
     } finally {
         buttonElement.disabled = false;
         buttonElement.innerHTML = originalHTML;
     }
+}
+
+/**
+ * Valide le format d'une adresse email
+ * @param {string} email 
+ * @returns {boolean}
+ */
+export function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/**
+ * Valide si un montant est numérique et positif
+ * @param {number|string} amount 
+ * @returns {boolean}
+ */
+export function validatePayment(amount) {
+    const val = Number(amount);
+    return !isNaN(val) && val >= 0;
 }
