@@ -1,18 +1,17 @@
-// js/core/router.js
 import { getAppState } from './state.js';
 
-// Routes définies avec des chemins relatifs
+// Définition des routes (chemins relatifs à la racine du projet)
 const routes = {
-    dashboard: '../modules/dashboard/dashboard.js',
-    students: '../modules/students/students.js',
-    teachers: '../modules/teachers/teachers.js',
-    groups: '../modules/groups/groups.js',
-    attendance: '../modules/attendance/attendance.js',
-    payments: '../modules/payments/payments.js',
-    expenses: '../modules/expenses/expenses.js',
-    courses: '../modules/courses/courses.js',
-    reports: '../modules/reports/reports.js',
-    settings: '../modules/settings/settings.js'
+    dashboard: 'js/modules/dashboard/dashboard.js',
+    students: 'js/modules/students/students.js',
+    teachers: 'js/modules/teachers/teachers.js',
+    groups: 'js/modules/groups/groups.js',
+    attendance: 'js/modules/attendance/attendance.js',
+    payments: 'js/modules/payments/payments.js',
+    expenses: 'js/modules/expenses/expenses.js',
+    courses: 'js/modules/courses/courses.js',
+    reports: 'js/modules/reports/reports.js',
+    settings: 'js/modules/settings/settings.js'
 };
 
 const rolePermissions = {
@@ -22,17 +21,16 @@ const rolePermissions = {
 
 const loadedModules = {};
 
+// Fonction qui retourne le chemin absolu de la racine du site (ex: https://.../dar-el-oustad-saas/)
 function getBasePath() {
-    // On récupère l'URL complète du script courant (router.js)
     const scriptUrl = import.meta.url;
-    
-    // On extrait tout ce qui se trouve avant le dossier "/js/"
-    // GitHub Pages sert le site dans un sous-répertoire, il faut donc garder cette partie.
-    const basePath = scriptUrl.substring(0, scriptUrl.lastIndexOf('/js/') + 1);
-    
-    // Correction clé : on supprime le point d'interrogation et tout ce qui suit
-    // que GitHub Pages ajoute parfois, ce qui cassait la résolution.
-    return basePath.split('?')[0];
+    // On cherche le dernier '/js/' pour tout garder avant (racine)
+    const index = scriptUrl.indexOf('/js/');
+    if (index === -1) {
+        // Fallback pour développement local
+        return window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+    }
+    return scriptUrl.substring(0, index + 1); // +1 pour garder le slash final
 }
 
 export async function navigateTo(viewName) {
@@ -58,14 +56,14 @@ export async function navigateTo(viewName) {
 
         const baseUrl = getBasePath();
         const relativePath = routes[viewName];
-        // On reconstruit le chemin complet
         const fullPath = `${baseUrl}${relativePath}`;
-        
+
         if (!loadedModules[viewName]) {
             loadedModules[viewName] = await import(fullPath);
         }
         const module = loadedModules[viewName];
 
+        // Met à jour l'état global pour les modules qui en ont besoin
         window.appState = getAppState();
 
         if (typeof module.render === 'function') {
