@@ -6,29 +6,18 @@ const rolePermissions = {
     teacher: ['dashboard', 'students', 'groups', 'attendance', 'parents']
 };
 
+// Utilisation de chemins relatifs cleans et standardisés pour le routeur
 const routes = {
-    dashboard: 'js/modules/dashboard/dashboard.js',
-    students: 'js/modules/students/students.js',
-    teachers: 'js/modules/teachers/teachers.js',
-    groups: 'js/modules/groups/groups.js',
-    attendance: 'js/modules/attendance/attendance.js',
-    payments: 'js/modules/payments/payments.js',
-    settings: 'js/modules/settings/settings.js',
-    center: 'js/modules/center/center.js',
-    parents: 'js/modules/parents/parents.js'
+    dashboard: '../modules/dashboard/dashboard.js',
+    students: '../modules/students/students.js',
+    teachers: '../modules/teachers/teachers.js',
+    groups: '../modules/groups/groups.js',
+    attendance: '../modules/attendance/attendance.js',
+    payments: '../modules/payments/payments.js',
+    settings: '../modules/settings/settings.js',
+    center: '../modules/center/center.js',
+    parents: '../modules/parents/parents.js'
 };
-
-/**
- * Calcule proprement la racine du projet, que ce soit en local ou sur GitHub Pages
- */
-function getBasePath() {
-    // Si nous sommes sur GitHub Pages, le chemin doit inclure le nom du dépôt
-    if (window.location.hostname.includes('github.io')) {
-        return window.location.origin + '/dar-el-oustad-saas/';
-    }
-    // En local (Live Server, Localhost), on repart simplement de la racine standard
-    return window.location.origin + '/';
-}
 
 export async function navigateTo(viewName) {
     const container = document.getElementById('content-container');
@@ -52,24 +41,28 @@ export async function navigateTo(viewName) {
     // 2. Affichage du loader interne pendant le chargement
     container.innerHTML = `
         <div style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
-            <div class="spinner"></div>
+            <div style="width: 32px; height: 32px; border: 3px solid rgba(0,0,0,0.1); border-top-color: #2c7da0; border-radius: 50%; animation: spinRouter 0.8s linear infinite;"></div>
         </div>
     `;
 
     try {
         if (!routes[viewName]) throw new Error(`La vue "${viewName}" n'existe pas.`);
         
-        // Construction de l'URL absolue sans faille
-        const moduleUrl = `${getBasePath()}${routes[viewName]}`;
+        // Résolution dynamique du module à partir de la position de router.js (js/core/)
+        const moduleUrl = new URL(routes[viewName], import.meta.url).href;
         
-        // Importation dynamique globale du module
+        // Importation globale
         const module = await import(moduleUrl);
         
         if (typeof module.render === 'function') {
-            container.innerHTML = ''; // Nettoyage du spinner
+            container.innerHTML = ''; // Nettoyage
             await module.render(container);
+        } else if (typeof module[`render${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`] === 'function') {
+            // Sécurité alternative si le module utilise un nommage spécifique (ex: renderDashboard)
+            container.innerHTML = '';
+            await module[`render${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`](container);
         } else {
-            throw new Error(`Le module "${viewName}" ne possède pas de méthode render().`);
+            throw new Error(`Le module "${viewName}" ne possède pas de méthode de rendu compatible.`);
         }
     } catch (err) {
         console.error("Erreur d'aiguillage du module :", err);
@@ -83,4 +76,12 @@ export async function navigateTo(viewName) {
             </div>
         `;
     }
+}
+
+// Style d'attente pour le routeur
+if (!document.getElementById('router-animation-style')) {
+    const style = document.createElement('style');
+    style.id = 'router-animation-style';
+    style.innerHTML = `@keyframes spinRouter { to { transform: rotate(360deg); } }`;
+    document.head.appendChild(style);
 }
