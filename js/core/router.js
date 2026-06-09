@@ -6,28 +6,28 @@ const rolePermissions = {
     teacher: ['dashboard', 'students', 'groups', 'attendance', 'parents']
 };
 
-// ATTENTION À LA CASSE : Vérifiez si vos dossiers sur GitHub ont des majuscules !
 const routes = {
-    dashboard: 'modules/dashboard/dashboard.js',
-    students: 'modules/students/students.js',
-    teachers: 'modules/teachers/teachers.js',
-    groups: 'modules/groups/groups.js',
-    attendance: 'modules/attendance/attendance.js',
-    payments: 'modules/payments/payments.js',
-    settings: 'modules/settings/settings.js',
-    center: 'modules/center/center.js',     // Si votre dossier s'appelle "center"
-    parents: 'modules/parents/parents.js'
+    dashboard: 'js/modules/dashboard/dashboard.js',
+    students: 'js/modules/students/students.js',
+    teachers: 'js/modules/teachers/teachers.js',
+    groups: 'js/modules/groups/groups.js',
+    attendance: 'js/modules/attendance/attendance.js',
+    payments: 'js/modules/payments/payments.js',
+    settings: 'js/modules/settings/settings.js',
+    center: 'js/modules/center/center.js',
+    parents: 'js/modules/parents/parents.js'
 };
 
 /**
- * Calcule dynamiquement le chemin racine pour éviter les erreurs de sous-dossiers sur GitHub Pages
+ * Calcule proprement la racine du projet, que ce soit en local ou sur GitHub Pages
  */
 function getBasePath() {
-    const url = new URL(import.meta.url);
-    const pathParts = url.pathname.split('/');
-    pathParts.pop(); // Retire 'router.js'
-    pathParts.pop(); // Retire 'core'
-    return url.origin + pathParts.join('/') + '/';
+    // Si nous sommes sur GitHub Pages, le chemin doit inclure le nom du dépôt
+    if (window.location.hostname.includes('github.io')) {
+        return window.location.origin + '/dar-el-oustad-saas/';
+    }
+    // En local (Live Server, Localhost), on repart simplement de la racine standard
+    return window.location.origin + '/';
 }
 
 export async function navigateTo(viewName) {
@@ -49,7 +49,7 @@ export async function navigateTo(viewName) {
         return;
     }
 
-    // 2. Affichage d'un loader interne propre
+    // 2. Affichage du loader interne pendant le chargement
     container.innerHTML = `
         <div style="display: flex; justify-content: center; align-items: center; min-height: 200px;">
             <div class="spinner"></div>
@@ -59,9 +59,10 @@ export async function navigateTo(viewName) {
     try {
         if (!routes[viewName]) throw new Error(`La vue "${viewName}" n'existe pas.`);
         
+        // Construction de l'URL absolue sans faille
         const moduleUrl = `${getBasePath()}${routes[viewName]}`;
-        console.log("Tentative de chargement du module :", moduleUrl); // Pour déboguer dans la console F12
         
+        // Importation dynamique globale du module
         const module = await import(moduleUrl);
         
         if (typeof module.render === 'function') {
@@ -71,17 +72,12 @@ export async function navigateTo(viewName) {
             throw new Error(`Le module "${viewName}" ne possède pas de méthode render().`);
         }
     } catch (err) {
-        console.error("Erreur de routage critique :", err);
+        console.error("Erreur d'aiguillage du module :", err);
         container.innerHTML = `
             <div class="card" style="border-left: 4px solid #ef4444; padding: 24px;">
-                <h3 style="color: #ef4444; display: flex; align-items: center; gap: 8px;">
-                    ⚠️ Erreur d'aiguillage du module [${viewName}]
-                </h3>
+                <h3 style="color: #ef4444;">⚠️ Impossible de charger la page [${viewName}]</h3>
                 <p style="margin-top: 12px; color: #475569; background: #f8fafc; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.9rem;">
                     ${err.message}
-                </p>
-                <p style="margin-top: 12px; font-size: 0.85rem; color: #64748b;">
-                    💡 Vérifiez que le nom du dossier sur votre dépôt GitHub ne contient pas de majuscule (ex: "center" au lieu de "Center").
                 </p>
                 <button class="btn btn-sm" style="margin-top: 16px;" onclick="window.location.reload()">Réessayer</button>
             </div>
