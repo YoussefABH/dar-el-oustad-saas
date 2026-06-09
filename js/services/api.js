@@ -4,16 +4,48 @@ import { getAppState } from '../core/state.js';
 
 export class ApiService {
 
-    // ==========================
-    // ÉTUDIANTS
-    // ==========================
+    static getState() {
+        const state = getAppState();
+
+        if (!state) {
+            throw new Error('AppState introuvable.');
+        }
+
+        return state;
+    }
+
+    static requireCentreId() {
+        const state = this.getState();
+
+        if (!state.centreId) {
+            throw new Error(
+                'centreId manquant. Vérifiez que setAppState() est exécuté après la connexion.'
+            );
+        }
+
+        return state.centreId;
+    }
+
+    static requireUser() {
+        const state = this.getState();
+
+        if (!state.user?.id) {
+            throw new Error(
+                'Utilisateur non connecté.'
+            );
+        }
+
+        return state.user;
+    }
+
+    // =====================
+    // STUDENTS
+    // =====================
 
     static async fetchStudents() {
-        const { centreId } = getAppState();
+        const centreId = this.requireCentreId();
 
-        if (!centreId) {
-            throw new Error('Centre ID introuvable.');
-        }
+        console.log('fetchStudents centreId =', centreId);
 
         return safeQuery(() =>
             supabaseClient
@@ -25,10 +57,8 @@ export class ApiService {
     }
 
     static async createStudent(studentData) {
-        const { centreId, user } = getAppState();
-
-        if (!centreId) throw new Error('Centre ID introuvable.');
-        if (!user?.id) throw new Error('Utilisateur non connecté.');
+        const centreId = this.requireCentreId();
+        const user = this.requireUser();
 
         return safeQuery(() =>
             supabaseClient
@@ -42,30 +72,100 @@ export class ApiService {
         );
     }
 
-    static async updateStudent(id, studentData) {
+    // =====================
+    // TEACHERS
+    // =====================
+
+    static async fetchTeachers() {
+        const centreId = this.requireCentreId();
+
         return safeQuery(() =>
             supabaseClient
-                .from('students')
-                .update(studentData)
-                .eq('id', id)
+                .from('teachers')
+                .select('*')
+                .eq('centre_id', centreId)
+        );
+    }
+
+    static async createTeacher(teacherData) {
+        const centreId = this.requireCentreId();
+        const user = this.requireUser();
+
+        return safeQuery(() =>
+            supabaseClient
+                .from('teachers')
+                .insert([{
+                    ...teacherData,
+                    centre_id: centreId,
+                    created_by: user.id
+                }])
                 .select()
         );
     }
 
-    static async deleteStudent(id) {
+    // =====================
+    // GROUPS
+    // =====================
+
+    static async fetchGroups() {
+        const centreId = this.requireCentreId();
+
         return safeQuery(() =>
             supabaseClient
-                .from('students')
-                .delete()
-                .eq('id', id)
+                .from('groups')
+                .select('*')
+                .eq('centre_id', centreId)
         );
     }
 
-    // ==========================
-    // ENSEIGNANTS
-    // ==========================
-
-    static async fetchTeachers() {
-        const { centreId } = getAppState();
+    static async createGroup(groupData) {
+        const centreId = this.requireCentreId();
+        const user = this.requireUser();
 
         return safeQuery(() =>
+            supabaseClient
+                .from('groups')
+                .insert([{
+                    ...groupData,
+                    centre_id: centreId,
+                    created_by: user.id
+                }])
+                .select()
+        );
+    }
+
+    // =====================
+    // PAYMENTS
+    // =====================
+
+    static async fetchPayments() {
+        const centreId = this.requireCentreId();
+
+        return safeQuery(() =>
+            supabaseClient
+                .from('payments')
+                .select(`
+                    *,
+                    students(name)
+                `)
+                .eq('centre_id', centreId)
+                .order('payment_date', { ascending: false })
+        );
+    }
+
+    static async createPayment(paymentData) {
+        const centreId = this.requireCentreId();
+        const user = this.requireUser();
+
+        return safeQuery(() =>
+            supabaseClient
+                .from('payments')
+                .insert([{
+                    ...paymentData,
+                    centre_id: centreId,
+                    created_by: user.id
+                }])
+                .select()
+        );
+    }
+        }
