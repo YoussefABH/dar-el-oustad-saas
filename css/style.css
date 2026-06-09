@@ -26,8 +26,23 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Empêche les débordements horizontaux */
+html,
+body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+/* Images et médias */
+img,
+video,
+canvas {
+    max-width: 100%;
+    height: auto;
+}
+
 /* ==========================================================================
-   2. ÉCRAN DE CONNEXION / GATE D'AUTHENTIFICATION (Ce qui clochait)
+   2. ÉCRAN DE CONNEXION / GATE D'AUTHENTIFICATION
    ========================================================================== */
 /* Force l'écran de login à se centrer parfaitement au milieu du navigateur */
 .loader-global {
@@ -361,3 +376,256 @@ input:focus, select:focus, textarea:focus {
 
 .alert-success { background-color: #10b981; }
 .alert-error { background-color: #ef4444; }
+
+/* ==========================================================================
+   8. RESPONSIVE PREMIUM MOBILE
+   ========================================================================== */
+
+/* Smartphones */
+@media screen and (max-width: 768px) {
+
+    .app-layout {
+        display: block;
+        width: 100%;
+    }
+
+    /* Sidebar cachée par défaut */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        z-index: 9999;
+        transition: left .3s ease;
+        overflow-y: auto;
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .main-area {
+        width: 100%;
+        margin: 0;
+        min-width: 0;
+    }
+
+    header {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    header h1,
+    header h2,
+    header h3 {
+        font-size: 1rem;
+    }
+
+    main {
+        padding: 12px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .card {
+        padding: 16px;
+        margin-bottom: 16px;
+        border-radius: 14px;
+    }
+
+    /* KPI */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .kpi-card {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .kpi-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+    }
+
+    .kpi-title {
+        font-size: .8rem;
+    }
+
+    .kpi-value {
+        font-size: 1.5rem;
+    }
+
+    /* Formulaires */
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .form-group {
+        margin-bottom: 14px;
+    }
+
+    input,
+    select,
+    textarea {
+        padding: 12px;
+        font-size: 16px; /* évite le zoom iPhone */
+    }
+
+    .btn {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .btn-sm {
+        width: auto;
+    }
+
+    /* Tableaux */
+    .data-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table {
+        min-width: 650px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px;
+        font-size: .85rem;
+    }
+
+    /* Toast */
+    .alert-toast {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+    }
+}
+
+/* Très petits téléphones */
+@media screen and (max-width: 480px) {
+
+    main {
+        padding: 10px;
+    }
+
+    .card {
+        padding: 14px;
+    }
+
+    .sidebar-brand {
+        font-size: 1rem;
+        padding: 18px;
+    }
+
+    .nav-item {
+        padding: 12px;
+        font-size: .9rem;
+    }
+
+    .kpi-value {
+        font-size: 1.3rem;
+    }
+
+    .card h2,
+    .card h3 {
+        font-size: 1rem;
+    }
+
+    .btn {
+        font-size: .9rem;
+    }
+}
+
+/* ==========================================================================
+   9. AMÉLIORATIONS MOBILE PRO
+   ========================================================================== */
+
+/* Bouton hamburger */
+.mobile-menu-btn {
+    display: none;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* Overlay menu mobile */
+.sidebar-overlay {
+    display: none;
+}
+
+@media screen and (max-width: 768px) {
+
+    .mobile-menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition: all .3s ease;
+    }
+
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .sidebar {
+        box-shadow: 0 0 40px rgba(0,0,0,.3);
+    }
+
+    /* Cartes plus compactes */
+    .kpi-card {
+        min-height: 88px;
+    }
+
+    /* Boutons actions tableaux */
+    .data-table .btn {
+        width: auto;
+        min-height: auto;
+        white-space: nowrap;
+    }
+
+    /* Scroll plus fluide */
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+/* Écrans très larges */
+@media screen and (min-width: 1600px) {
+
+    main {
+        max-width: 1600px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+   }
