@@ -12,7 +12,6 @@ class AppStateManager extends EventTarget {
 
     setAppState(newState) {
         this.state = { ...this.state, ...newState };
-        // Propagation de l'événement de changement d'état à travers l'application
         this.dispatchEvent(new CustomEvent('statechange', { detail: this.state }));
     }
 
@@ -36,5 +35,5 @@ export const getAppState = stateManager.getAppState.bind(stateManager);
 export const isDirector = stateManager.isDirector.bind(stateManager);
 export const onStateChange = stateManager.onStateChange.bind(stateManager);
 
-// Rétrocompatibilité console globale si nécessaire
+// Rétrocompatibilité console
 window.appStateInstance = stateManager;
