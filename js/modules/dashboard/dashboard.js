@@ -1,7 +1,11 @@
-import { ApiService } from '../../services/api.js';
+// CORRECTION DU CHEMIN : Ajuste ce chemin vers ton fichier d'API réel (ex: '../../services/safeQuery.js' ou '../../api.js')
+import { ApiService } from '../../services/api.js'; 
 import { escapeHtml } from '../../utils/dom.js';
 
 export async function render(container) {
+    // Sécurité au cas où le container n'est pas encore prêt dans le DOM
+    if (!container) return;
+
     container.innerHTML = `
         <div style="display: flex; justify-content: center; padding: 40px;">
             <div class="spinner"></div>
@@ -9,11 +13,16 @@ export async function render(container) {
     `;
 
     try {
-        const students = await ApiService.fetchStudents();
+        // Sécurité : Si ApiService n'est pas encore chargé ou n'a pas la méthode
+        if (!ApiService || typeof ApiService.fetchStudents !== 'function') {
+            throw new Error("Le service d'API n'est pas initialisé correctement ou la méthode fetchStudents est manquante.");
+        }
+
+        const students = await ApiService.fetchStudents() || [];
         const total = students.length;
         const paid = students.filter(s => s.status === 'Paid').length;
         const pending = total - paid;
-        const revenue = students.reduce((acc, s) => acc + (Number(s.payment_amount) || 0), 0);
+        const revenue = students.reduce((acc, s) => acc + (迫ber(s.payment_amount) || 0), 0);
 
         container.innerHTML = `
             <div class="dashboard-grid">
@@ -46,7 +55,7 @@ export async function render(container) {
                             ${students.length === 0 ? `<tr><td colspan="3" style="text-align:center; color:#64748b;">Aucun étudiant inscrit.</td></tr>` : 
                               students.slice(0, 5).map(s => `
                                 <tr>
-                                    <td><strong>${escapeHtml(s.name)}</strong></td>
+                                    <td><strong>${escapeHtml(s.name || '')}</strong></td>
                                     <td>${escapeHtml(s.level || 'Non spécifié')}</td>
                                     <td>
                                         <span class="btn btn-sm ${s.status === 'Paid' ? '' : 'btn-danger'}" style="pointer-events:none; padding:4px 8px; font-size:0.8rem;">
@@ -61,6 +70,12 @@ export async function render(container) {
             </div>
         `;
     } catch (err) {
-        container.innerHTML = `<div class="card alert-error">Erreur d'affichage du tableau de bord : ${err.message}</div>`;
+        console.error("Erreur Dashboard technique :", err);
+        container.innerHTML = `
+            <div class="card alert-error" style="border-left: 4px solid #ef4444; padding: 20px;">
+                <h4 style="color:#ef4444;">Erreur d'affichage du tableau de bord</h4>
+                <p style="margin-top: 8px; font-family: monospace; font-size:0.85rem;">${err.message}</p>
+            </div>
+        `;
     }
 }
