@@ -1,6 +1,7 @@
+// js/core/router.js
 import { getAppState } from './state.js';
 
-// Définition des routes avec chemins relatifs (depuis le dossier courant js/core/)
+// Routes définies avec des chemins relatifs
 const routes = {
     dashboard: '../modules/dashboard/dashboard.js',
     students: '../modules/students/students.js',
@@ -14,29 +15,30 @@ const routes = {
     settings: '../modules/settings/settings.js'
 };
 
-// Permissions par rôle (à adapter selon votre logique)
 const rolePermissions = {
     director: ['dashboard', 'students', 'teachers', 'groups', 'attendance', 'payments', 'expenses', 'courses', 'reports', 'settings'],
     teacher: ['dashboard', 'students', 'groups', 'attendance', 'courses']
 };
 
-// Cache des modules déjà chargés
 const loadedModules = {};
 
-// Fonction utilitaire pour obtenir le chemin de base absolu du projet (fonctionne en local et sur GitHub Pages)
 function getBasePath() {
-    // On utilise l'URL du script courant pour déterminer la racine
+    // On récupère l'URL complète du script courant (router.js)
     const scriptUrl = import.meta.url;
-    // Cherche le dernier '/' avant le dossier 'js/core/'
-    const base = scriptUrl.substring(0, scriptUrl.lastIndexOf('/js/') + 1);
-    return base;
+    
+    // On extrait tout ce qui se trouve avant le dossier "/js/"
+    // GitHub Pages sert le site dans un sous-répertoire, il faut donc garder cette partie.
+    const basePath = scriptUrl.substring(0, scriptUrl.lastIndexOf('/js/') + 1);
+    
+    // Correction clé : on supprime le point d'interrogation et tout ce qui suit
+    // que GitHub Pages ajoute parfois, ce qui cassait la résolution.
+    return basePath.split('?')[0];
 }
 
 export async function navigateTo(viewName) {
     const container = document.getElementById('content-container');
     if (!container) return;
 
-    // Vérification des droits d'accès
     const state = getAppState();
     if (!state.user) {
         container.innerHTML = `<div class="card alert-error">⛓️ Session expirée. Veuillez vous reconnecter.</div>`;
@@ -47,7 +49,6 @@ export async function navigateTo(viewName) {
         return;
     }
 
-    // Afficher un indicateur de chargement
     container.innerHTML = `<div class="loader-global"><div class="spinner"></div><p>Chargement de ${viewName}...</p></div>`;
 
     try {
@@ -55,33 +56,23 @@ export async function navigateTo(viewName) {
             throw new Error(`Route inconnue : ${viewName}`);
         }
 
-        // Résolution du chemin absolu pour l'import dynamique (fonctionne sur GitHub Pages)
         const baseUrl = getBasePath();
         const relativePath = routes[viewName];
-        // Nettoyer les double slashes si nécessaire
-        const fullPath = `${baseUrl}${relativePath.replace(/^\.\.\//, '')}`;
-
-        // Importer le module (avec cache)
+        // On reconstruit le chemin complet
+        const fullPath = `${baseUrl}${relativePath}`;
+        
         if (!loadedModules[viewName]) {
             loadedModules[viewName] = await import(fullPath);
         }
         const module = loadedModules[viewName];
 
-        // Rendre l'état global accessible si certains modules en ont besoin
         window.appState = getAppState();
 
-        // Exécuter la fonction de rendu
         if (typeof module.render === 'function') {
             await module.render(container);
-        } 
-        // Fallback pour d'éventuels modules nommés renderDashboard, etc. (optionnel)
-        else if (typeof module[`render${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`] === 'function') {
-            await module[`render${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`](container);
-        } 
-        else {
-            throw new Error(`Le module ${viewName} n'exporte pas de fonction 'render' ou 'render${viewName}'.`);
+        } else {
+            throw new Error(`Le module ${viewName} n'exporte pas de fonction 'render'.`);
         }
-
     } catch (error) {
         console.error(`Erreur de chargement de la vue ${viewName} :`, error);
         container.innerHTML = `
